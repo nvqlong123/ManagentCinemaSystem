@@ -16,9 +16,8 @@ namespace ManagentCinemaSystem.Models
 
         [Required(ErrorMessage = "Loại giao dịch không được để trống.")]
         public string TransactionType { get; set; } // Cash or QR
-        public int CustomerId { get; set; }
-        public virtual Customer Customer { get; set; }
-
+        public string? CustomerId { get; set; }
+        public virtual Customer? Customer { get; set; }
         public virtual ICollection<ShowSeat> ShowSeats { get; set; } = new List<ShowSeat>();
     }
 

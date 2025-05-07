@@ -1,21 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace ManagentCinemaSystem.Models
 {
-    public class User
+    public class User : IdentityUser
     {
-        [Key]
-        public int Id { get; set; }
-
-        [Required(ErrorMessage = "Tên đăng nhập không được để trống.")]
-        [StringLength(50, ErrorMessage = "Tên đăng nhập tối đa 50 ký tự.")]
-        public string Username { get; set; }
-
-        [Required(ErrorMessage = "Mật khẩu không được để trống.")]
-        [StringLength(100, ErrorMessage = "Mật khẩu tối đa 100 ký tự.")]
-        [DataType(DataType.Password)]
-        public string Password { get; set; }
-
         [Required(ErrorMessage = "Trạng thái không được để trống.")]
         public string Status { get; set; }
 
