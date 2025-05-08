@@ -27,6 +27,7 @@ namespace ManagentCinemaSystem.Models
         [Required(ErrorMessage = "Thời gian khởi chiếu không được để trống.")]
         [Range(1, 500, ErrorMessage = "Thời lượng phải từ 1 đến 500 phút.")]
         public int Duration { get; set; }
+        public bool IsActive { get; set; } = true; // Mặc định là true -- đang chiếu
         public virtual ICollection<Show> Shows { get; set; } = new List<Show>();
         public virtual ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
     }

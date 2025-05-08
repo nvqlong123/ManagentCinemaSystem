@@ -1,0 +1,75 @@
+﻿@using ManagentCinemaSystem.ViewModels.Admin
+@model UserViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.UserName</span></h1>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">ID</dt>
+        <dd class="col-sm-9">@Model.Id</dd>
+
+        <dt class="col-sm-3">Tên đăng nhập</dt>
+        <dd class="col-sm-9">@Model.UserName</dd>
+
+        <dt class="col-sm-3">Họ tên</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Model.Email</dd>
+
+        <dt class="col-sm-3">Điện thoại</dt>
+        <dd class="col-sm-9">@Model.Phone</dd>
+
+        <dt class="col-sm-3">Vai trò</dt>
+        <dd class="col-sm-9">
+            @if (!string.IsNullOrEmpty(Model.Role))
+            {
+                <span class="badge bg-primary">@Model.Role</span>
+            }
+            else
+            {
+                <span class="fst-italic">Chưa có vai trò</span>
+            }
+        </dd>
+
+        <dt class="col-sm-3">Loại tài khoản</dt>
+        <dd class="col-sm-9"><span class="badge bg-secondary">@Model.UserType</span></dd>
+
+        <dt class="col-sm-3">Trạng thái</dt>
+        <dd class="col-sm-9">
+            <span class="badge @(Model.Status == "Active" ? "bg-success" : (Model.Status == "Banned" ? "bg-danger" : "bg-warning text-dark"))">
+                @Model.Status
+            </span>
+        </dd>
+
+        <dt class="col-sm-3">Email đã xác thực</dt>
+        <dd class="col-sm-9">
+            @if (Model.EmailConfirmed)
+            {
+                <span class="text-success fw-bold">Có</span>
+            }
+            else
+            {
+                <span class="text-warning fw-bold">Không</span>
+            }
+        </dd>
+    </dl>
+</div>
+<div class="mt-4">
+    <a asp-controller="User" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Chỉnh sửa thông tin</a>
+    <a asp-controller="User" asp-action="ManageRole" asp-route-id="@Model.Id" class="btn btn-info">Quản lý vai trò</a>
+    <a asp-controller="User" asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+</div>

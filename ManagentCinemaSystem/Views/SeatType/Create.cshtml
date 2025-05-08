@@ -1,0 +1,48 @@
+﻿@model ManagentCinemaSystem.ViewModels.SeatTypeViewModel
+
+@{
+    ViewData["Title"] = "Thêm loại ghế mới";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-controller="SeatType" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null)
+            {
+                <div class="alert alert-danger small">
+                    @foreach (var error in ViewData.ModelState[string.Empty].Errors)
+                    {
+                        <span>@error.ErrorMessage</span>
+
+                        <br />
+                    }
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-bold"></label>
+                <input asp-for="Name" class="form-control form-control-sm" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Cost" class="form-label fw-bold"></label>
+                <input asp-for="Cost" type="number" class="form-control form-control-sm" min="0" />
+                <span asp-validation-for="Cost" class="text-danger small"></span>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Thêm loại ghế</button>
+                <a asp-controller="SeatType" asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

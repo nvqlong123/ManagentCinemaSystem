@@ -1,0 +1,88 @@
+﻿@using ManagentCinemaSystem.ViewModels.Admin
+@model UserCreateViewModel
+
+@{
+    ViewData["Title"] = "Tạo người dùng mới";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-7">
+        <form asp-controller="User" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger small"></div>
+
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label fw-bold"></label>
+                <input asp-for="UserName" class="form-control form-control-sm" />
+                <span asp-validation-for="UserName" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-bold"></label>
+                <input asp-for="Email" class="form-control form-control-sm" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-bold"></label>
+                <input asp-for="Name" class="form-control form-control-sm" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label fw-bold"></label>
+                <input asp-for="Phone" class="form-control form-control-sm" />
+                <span asp-validation-for="Phone" class="text-danger small"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Password" class="form-label fw-bold"></label>
+                    <input asp-for="Password" class="form-control form-control-sm" type="password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label fw-bold"></label>
+                    <input asp-for="ConfirmPassword" class="form-control form-control-sm" type="password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="UserType" class="form-label fw-bold"></label>
+                <select asp-for="UserType" asp-items="Model.AvailableUserTypes" class="form-select form-select-sm">
+                    <option value="">-- Chọn loại tài khoản --</option>
+                </select>
+                <span asp-validation-for="UserType" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="InitialRole" class="form-label fw-bold"></label>
+                <select asp-for="InitialRole" asp-items="Model.AvailableRoles" class="form-select form-select-sm">
+                    <option value="">-- Chọn vai trò --</option>
+                </select>
+                <span asp-validation-for="InitialRole" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label fw-bold"></label>
+                <select asp-for="Status" asp-items="Model.AvailableStatuses" class="form-select form-select-sm"></select>
+                <span asp-validation-for="Status" class="text-danger small"></span>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Tạo người dùng</button>
+                <a asp-controller="User" asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

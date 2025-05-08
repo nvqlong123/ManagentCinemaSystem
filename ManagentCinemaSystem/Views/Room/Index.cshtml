@@ -1,0 +1,73 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model RoomIndexViewModel
+
+@{
+    ViewData["Title"] = "Quản lý phòng chiếu cho rạp: " + Model.Cinema.Name;
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>
+    <a asp-controller="Cinema" asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách Rạp
+    </a>
+</p>
+
+<p>
+    <a asp-controller="Room" asp-action="Create" asp-route-cinemaId="@Model.Cinema.Id" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i>  Thêm phòng mới cho rạp này
+    </a>
+</p>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+@if (!Model.Rooms.Any())
+{
+    <div class="alert alert-info">Rạp chiếu phim <strong class="text-primary">@Model.Cinema.Name</strong> hiện chưa có phòng chiếu nào.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Tên phòng</th>
+                    <th>Số ghế (ước tính)</th> @* Sẽ chính xác hơn nếu có Seats.Count *@
+                    <th>Số suất chiếu (ước tính)</th> @* Sẽ chính xác hơn nếu có Shows.Count *@
+                    <th style="min-width: 250px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var room in Model.Rooms)
+                {
+                    <tr>
+                        <td>@room.Name</td>
+                        <td>@room.Seats.Count</td>
+                        <td>@room.Shows.Count</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a asp-controller="Room" asp-action="Details" asp-route-id="@room.Id" class="btn btn-sm btn-info">Chi tiết</a>
+                                <a asp-controller="Room" asp-action="Edit" asp-route-id="@room.Id" class="btn btn-sm btn-primary">Sửa</a>
+                                <a asp-controller="Room" asp-action="Delete" asp-route-id="@room.Id" class="btn btn-sm btn-danger">Xóa</a>
+                                <a asp-controller="Seat" asp-action="Manage" asp-route-roomId="@room.Id" class="btn btn-sm btn-outline-secondary">Ghế</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

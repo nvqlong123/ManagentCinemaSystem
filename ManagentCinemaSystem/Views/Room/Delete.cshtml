@@ -1,0 +1,81 @@
+﻿@model ManagentCinemaSystem.Models.Room
+
+@{
+    ViewData["Title"] = "Xác nhận xóa phòng";
+    bool canDelete = ViewBag.CanDelete ?? true;
+}
+
+<h1>@ViewData["Title"]: <span class="text-danger">@Model.Name</span></h1>
+<h4>(Thuộc rạp: @Model.Cinema.Name)</h4>
+<p>
+    <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách phòng của rạp @Model.Cinema.Name
+    </a>
+</p>
+<hr />
+
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!canDelete)
+{
+    <div class="alert alert-warning mt-3">
+        <strong>Không thể xóa!</strong> Phòng chiếu <strong>@Model.Name</strong> hiện đang có ràng buộc:
+        <ul>
+            @if (Model.Seats.Any())
+            {
+                <li>Có <strong>@Model.Seats.Count</strong> ghế được cấu hình.</li>
+            }
+            @if (Model.Shows.Any())
+            {
+                <li>Có <strong>@Model.Shows.Count</strong> suất chiếu đang sử dụng phòng này.</li>
+            }
+        </ul>
+        Vui lòng xóa các ràng buộc này trước khi xóa phòng.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        <h5>Cảnh báo!</h5>
+        <p>Bạn có chắc chắn muốn xóa vĩnh viễn phòng chiếu <strong>@Model.Name</strong> không?</p>
+        <p class="text-danger fw-bold">Hành động này không thể hoàn tác.</p>
+    </div>
+}
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">Tên phòng</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+        <dt class="col-sm-3">Rạp</dt>
+        <dd class="col-sm-9">@Model.Cinema.Name</dd>
+    </dl>
+
+    @if (canDelete)
+    {
+        <form asp-controller="Room" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-3">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa Phòng</button>
+            <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-secondary">Hủy</a>
+        </form>
+    }
+    else
+    {
+        @* Nút để điều hướng nếu không xóa được *@
+        @if (Model.Seats.Any())
+        {
+            <a asp-controller="Seat" asp-action="Manage" asp-route-roomId="@Model.Id" class="btn btn-warning ms-2">Đi đến quản lý ghế</a>
+        }
+        @if (Model.Shows.Any())
+        {
+            @* Link đến quản lý Suất chiếu, lọc theo phòng này (nếu có) *@
+            @* <a asp-controller="Show" asp-action="Index" asp-route-roomIdFilter="@Model.Id" class="btn btn-warning ms-2">Xem suất chiếu</a> *@
+        }
+    }
+</div>

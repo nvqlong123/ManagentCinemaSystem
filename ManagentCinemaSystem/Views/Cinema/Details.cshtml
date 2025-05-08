@@ -1,0 +1,48 @@
+﻿@model ManagentCinemaSystem.Models.Cinema
+
+@{
+    ViewData["Title"] = "Chi tiết Rạp chiếu phim";
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.Name</span></h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Address)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Address)
+        </dd>
+    </dl>
+
+    <h4 class="mt-4">Các phòng chiếu thuộc rạp</h4>
+    @if (Model.Rooms.Any())
+    {
+        <ul class="list-group">
+            @foreach (var room in Model.Rooms.OrderBy(r => r.Name))
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @room.Name
+                    <a asp-controller="Room" asp-action="Details" asp-route-id="@room.Id" class="btn btn-sm btn-outline-info">Xem chi tiết phòng</a>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="fst-italic">Rạp này chưa có phòng chiếu nào.</p>
+    }
+</div>
+<div class="mt-4">
+    <a asp-controller="Cinema" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Chỉnh sửa rạp</a> |
+    <a asp-controller="Room" asp-action="Create" asp-route-cinemaId="@Model.Id" class="btn btn-success">Thêm phòng cho rạp này</a> |
+    <a asp-controller="Cinema" asp-action="Index" class="btn btn-secondary">Quay lại danh sách rạp</a>
+</div>

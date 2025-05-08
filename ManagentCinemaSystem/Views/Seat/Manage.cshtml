@@ -1,0 +1,270 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model ManageSeatsViewModel
+
+@{
+    ViewData["Title"] = "Quản lý Ghế cho phòng: " + Model.RoomName;
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>
+    @* Sử dụng Model.CinemaId và Model.CinemaName từ ViewModel chính *@
+    Rạp: <a asp-controller="Cinema" asp-action="Details" asp-route-id="@Model.CinemaId"><strong>@Model.CinemaName</strong></a> |
+    Phòng: <a asp-controller="Room" asp-action="Details" asp-route-id="@Model.RoomId"><strong>@Model.RoomName</strong></a>
+</p>
+<p>
+    @* Sử dụng Model.CinemaId *@
+    <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách phòng
+    </a>
+</p>
+<hr />
+
+@* Div để hiển thị thông báo từ AJAX *@
+<div id="alert-placeholder" class="mt-2"></div>
+
+@* Hiển thị TempData từ các request trước đó (ví dụ: sau khi thêm ghế) *@
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">@TempData["Warning"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">@TempData["Info"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+
+
+<div class="row">
+    <div class="col-lg-7">
+        @* Tăng độ rộng cho bảng ghế *@
+        <h3>Danh sách Ghế Hiện tại (<span id="seat-count-display">@Model.Seats.Count</span> ghế)</h3>
+        @* Link đến Seat/Create/{roomId} *@
+        <a asp-controller="Seat" asp-action="Create" asp-route-roomId="@Model.RoomId" class="btn btn-primary btn-sm mb-3">
+            <i class="bi bi-plus-circle"></i> Thêm ghế đơn
+        </a>
+        @if (Model.Seats.Any())
+        {
+            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Hàng</th>
+                            <th>Cột</th>
+                            <th>Loại ghế</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var seat in Model.Seats)
+                        {
+                            <tr id="seat-row-@seat.Id">
+                                <td class="fw-bold">@seat.Row</td>
+                                <td>@seat.Col</td>
+                                <td>@(Model.AvailableSeatTypes.FirstOrDefault(st => st.Value == seat.SeatTypeId.ToString())?.Text ?? "N/A")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        @* Link đến /Seat/Edit/{seat.Id} *@
+                                        <a asp-controller="Seat" asp-action="Edit" asp-route-id="@seat.Id" class="btn btn-outline-primary">Sửa</a>
+                                        @* Nút Xóa gọi hàm JavaScript deleteSeat *@
+                                        <button type="button" onclick="deleteSeat(@seat.Id, '@seat.Row@seat.Col')" class="btn btn-outline-danger">Xóa</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info mt-3">Chưa có ghế nào được cấu hình cho phòng này.</div>
+        }
+    </div>
+
+    <div class="col-lg-5">
+        @* Giảm độ rộng cho form batch *@
+        <h3><i class="bi bi-magic"></i> Thêm Ghế Hàng Loạt</h3>
+        @* Form post đến /Seat/BatchCreate/{roomId} *@
+        <form asp-controller="Seat" asp-action="BatchCreate" asp-route-roomId="@Model.RoomId" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="mb-2">
+                <label asp-for="BatchStartRow" class="form-label fw-bold"></label>
+                <input asp-for="BatchStartRow" class="form-control form-control-sm" placeholder="A" maxlength="1" style="text-transform:uppercase" />
+                <span asp-validation-for="BatchStartRow" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchEndRow" class="form-label fw-bold"></label>
+                <input asp-for="BatchEndRow" class="form-control form-control-sm" placeholder="E" maxlength="1" style="text-transform:uppercase" />
+                <span asp-validation-for="BatchEndRow" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchStartCol" class="form-label fw-bold"></label>
+                <input asp-for="BatchStartCol" type="number" class="form-control form-control-sm" placeholder="1" min="1" />
+                <span asp-validation-for="BatchStartCol" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchEndCol" class="form-label fw-bold"></label>
+                <input asp-for="BatchEndCol" type="number" class="form-control form-control-sm" placeholder="10" min="1" />
+                <span asp-validation-for="BatchEndCol" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="BatchDefaultSeatTypeId" class="form-label fw-bold"></label>
+                <select asp-for="BatchDefaultSeatTypeId" asp-items="Model.AvailableSeatTypes" class="form-select form-select-sm">
+                    <option value="">-- Chọn loại ghế --</option>
+                </select>
+                <span asp-validation-for="BatchDefaultSeatTypeId" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Tạo hàng loạt</button>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        function getAntiForgeryToken() {
+            // Đảm bảo input token tồn tại trong DOM
+            const tokenInput = document.querySelector("input[name='__RequestVerificationToken']");
+            if (!tokenInput) {
+                console.error("Anti-forgery token input not found.");
+                return null;
+            }
+            return tokenInput.value;
+        }
+
+        function deleteSeat(seatId, seatName) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa ghế ${seatName} không? Hành động này không thể hoàn tác.`)) {
+                return; // Hủy nếu người dùng không xác nhận
+            }
+
+            const token = getAntiForgeryToken();
+            if (!token) {
+                 showTemporaryMessage('Lỗi bảo mật: Không tìm thấy Anti-Forgery Token.', 'danger');
+                return;
+            }
+
+            // Hiển thị thông báo đang xử lý (tùy chọn)
+            showTemporaryMessage('Đang xóa ghế...', 'info');
+
+            fetch(`/Seat/Delete/${seatId}`, { // <<<=== URL không có tiền tố Admin
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    // 'Content-Type': 'application/json' // Không cần nếu không gửi body
+                    'X-Requested-With': 'XMLHttpRequest' // Quan trọng để controller biết đây là AJAX
+                },
+                // body: JSON.stringify({ id: seatId }) // Không cần nếu id đã có trong URL
+            })
+            .then(response => {
+                 // Kiểm tra nếu response không thành công (vd: 400, 404, 500)
+                 if (!response.ok) {
+                     // Cố gắng đọc lỗi từ body response nếu có
+                     return response.text().then(text => {
+                          // Thử parse JSON nếu là lỗi ProblemDetails
+                          try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.message || errorData.title || text || `Lỗi ${response.status}`);
+                          } catch (e) {
+                            // Nếu không phải JSON hoặc parse lỗi, dùng text hoặc status
+                            throw new Error(text || `Lỗi ${response.status}`);
+                          }
+                     });
+                 }
+                  // Nếu response OK (200), cố gắng parse JSON
+                 return response.json();
+            })
+            .then(data => {
+                // Xóa dòng khỏi bảng
+                const row = document.getElementById(`seat-row-${seatId}`);
+                if(row) {
+                    row.style.transition = 'opacity 0.5s ease-out';
+                    row.style.opacity = '0';
+                    setTimeout(() => { row.remove(); updateSeatCount(); }, 500);
+                }
+                // Hiển thị thông báo thành công từ response
+                showTemporaryMessage(data.message || `Đã xóa ghế ${seatName} thành công.`, 'success');
+            })
+            .catch(error => {
+                 console.error("Lỗi khi xóa ghế:", error);
+                 showTemporaryMessage(`Lỗi khi xóa ghế ${seatName}: ${error.message}`, 'danger');
+            });
+        }
+
+         function updateSeatCount() {
+             const countDisplay = document.getElementById('seat-count-display');
+             if (!countDisplay) return;
+
+             let count = parseInt(countDisplay.textContent) || 0;
+             if (count > 0) {
+                count--;
+             }
+             countDisplay.textContent = count;
+             // Cập nhật tiêu đề
+             const titleElement = document.querySelector('h3:first-of-type'); // Lấy h3 đầu tiên
+             if (titleElement) {
+                 titleElement.textContent = `Danh sách Ghế Hiện tại (${count} ghế)`;
+             }
+        }
+
+         // Hàm hiển thị thông báo tạm thời
+         function showTemporaryMessage(message, type = 'info') {
+             let placeholder = document.getElementById('alert-placeholder');
+             if (!placeholder) {
+                 const h1 = document.querySelector('h1');
+                 if (h1) {
+                     placeholder = document.createElement('div');
+                     placeholder.id = 'alert-placeholder';
+                     placeholder.className = 'mt-2';
+                     h1.parentNode.insertBefore(placeholder, h1.nextSibling);
+                 } else {
+                     console.error("Cannot find H1 to insert alert placeholder.");
+                     alert(message); // Fallback
+                     return;
+                 }
+             }
+             // Xóa thông báo cũ
+             placeholder.innerHTML = '';
+
+             const wrapper = document.createElement('div');
+             wrapper.innerHTML = [
+                 `<div class="alert alert-${type} alert-dismissible fade show" role="alert">`,
+                 `   <div>${message}</div>`,
+                 '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                 '</div>'
+             ].join('');
+
+             placeholder.append(wrapper);
+
+             // Tự động ẩn
+             setTimeout(() => {
+                 const alertElement = wrapper.querySelector('.alert');
+                  if (alertElement && bootstrap.Alert.getInstance(alertElement)) {
+                     bootstrap.Alert.getInstance(alertElement).close();
+                 } else if(alertElement) {
+                     alertElement.remove(); // Fallback nếu không tìm thấy instance
+                 }
+             }, 5000); // 5 giây
+         }
+
+
+        // Tự động viết hoa cho input hàng ghế
+        document.querySelectorAll('input[name="BatchStartRow"], input[name="BatchEndRow"]').forEach(input => {
+            input.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        });
+
+    </script>
+}

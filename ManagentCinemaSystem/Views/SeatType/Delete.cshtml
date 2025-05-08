@@ -1,0 +1,65 @@
+﻿@model ManagentCinemaSystem.Models.SeatType
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Loại ghế";
+    bool isInUse = ViewBag.IsInUse ?? false;
+}
+
+<h1>@ViewData["Title"]: <span class="text-danger">@Model.Name</span></h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (isInUse)
+{
+    <div class="alert alert-warning mt-3">
+        <strong>Không thể xóa!</strong> Loại ghế "<strong>@Model.Name</strong>" hiện đang được sử dụng bởi một hoặc nhiều ghế.
+        Vui lòng thay đổi loại ghế của các ghế đang sử dụng loại này trước khi xóa.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        <h5>Cảnh báo!</h5>
+        <p>Bạn có chắc chắn muốn xóa vĩnh viễn loại ghế "<strong>@Model.Name</strong>" không?</p>
+        <p class="text-danger fw-bold">Hành động này không thể hoàn tác.</p>
+    </div>
+}
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Cost)
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Cost.ToString("N0") VNĐ
+        </dd>
+    </dl>
+
+    @if (!isInUse)
+    {
+        <form asp-controller="SeatType" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-3">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa</button>
+            <a asp-controller="SeatType" asp-action="Index" class="btn btn-secondary">Hủy</a>
+        </form>
+    }
+    else
+    {
+        <a asp-controller="SeatType" asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+        @* Bạn có thể thêm link đến trang quản lý ghế để người dùng dễ dàng thay đổi *@
+        @* <a asp-controller="Seat" asp-action="Index" class="btn btn-warning ms-2">Đi đến quản lý ghế</a> *@
+    }
+</div>

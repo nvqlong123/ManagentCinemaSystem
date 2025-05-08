@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ManagentCinemaSystem.Models;
+using ManagentCinemaSystem.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ManagentCinemaSystem.Controllers
@@ -26,7 +27,7 @@ namespace ManagentCinemaSystem.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new Models.ManagentCinemaSystem.Models.ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }
