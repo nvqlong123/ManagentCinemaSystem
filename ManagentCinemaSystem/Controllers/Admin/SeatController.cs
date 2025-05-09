@@ -133,22 +133,35 @@ namespace ManagentCinemaSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BatchCreate(int roomId, ManageSeatsViewModel model)
         {
-            var room = await _context.Rooms.FindAsync(roomId);
+            var room = await _context.Rooms
+                             .FirstOrDefaultAsync(r => r.Id == roomId);
+            var cinema = await _context.Cinemas.FindAsync(room.CinemaId);
             if (room == null)
             {
                 TempData["Error"] = $"Phòng với ID {roomId} không tồn tại.";
                 return RedirectToAction("Index", "Cinema");
             }
-
+            model.RoomId = roomId;
+            model.RoomName = room.Name;
+            model.CinemaId = cinema.Id;
+            model.CinemaName = cinema.Name;
             // ModelState.IsValid sẽ tự động kiểm tra các thuộc tính [Required] trong ViewModel
             if (!ModelState.IsValid)
             {
+                // Debug here
+                //foreach (var state in ModelState)
+                //{
+                //    foreach (var error in state.Value.Errors)
+                //    {
+                //        TempData["Error"] = $"Field: {state.Key}, Error: {error.ErrorMessage}";
+                //        break;
+                //    }
+                //}
                 TempData["Error"] = "Vui lòng điền đầy đủ thông tin hợp lệ để tạo ghế hàng loạt.";
                 // Cần load lại AvailableSeatTypes cho view Manage nếu trả về
                 model.AvailableSeatTypes = new SelectList(await _context.SeatTypes.OrderBy(st => st.Name).ToListAsync(), "Id", "Name", model.BatchDefaultSeatTypeId);
                 model.RoomId = roomId; // Đảm bảo roomId có trong model trả về
                 model.RoomName = room.Name;
-                var cinema = await _context.Cinemas.FindAsync(room.CinemaId);
                 model.CinemaName = cinema?.Name;
                 // Lấy lại danh sách ghế hiện tại để hiển thị
                 model.Seats = await _context.Seats

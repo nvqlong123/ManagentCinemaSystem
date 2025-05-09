@@ -38,6 +38,7 @@ namespace ManagentCinemaSystem.Controllers // Bỏ .Admin nếu bạn muốn
 
             var rooms = await _context.Rooms
                                       .Where(r => r.CinemaId == cinemaId)
+                                      .Include(r => r.Seats)
                                       .OrderBy(r => r.Name)
                                       .ToListAsync();
 

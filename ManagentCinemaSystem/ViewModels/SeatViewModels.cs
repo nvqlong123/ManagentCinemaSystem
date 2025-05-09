@@ -28,17 +28,17 @@ namespace ManagentCinemaSystem.ViewModels
         public string RoomName { get; set; } // For display
         public string CinemaName { get; set; } // For display
 
-        public IEnumerable<SelectListItem> AvailableSeatTypes { get; set; }
+        public IEnumerable<SelectListItem>? AvailableSeatTypes { get; set; }
     }
 
     public class ManageSeatsViewModel
     {
         public int RoomId { get; set; }
-        public string RoomName { get; set; }
-        public int CinemaId { get; set; } // <<<===== THÊM THUỘC TÍNH NÀY
-        public string CinemaName { get; set; }
-        public List<SeatViewModel> Seats { get; set; } = new List<SeatViewModel>();
-        public IEnumerable<SelectListItem> AvailableSeatTypes { get; set; }
+        public string? RoomName { get; set; }
+        public int? CinemaId { get; set; } // <<<===== THÊM THUỘC TÍNH NÀY
+        public string? CinemaName { get; set; }
+        public List<SeatViewModel> ?Seats { get; set; } = new List<SeatViewModel>();
+        public IEnumerable<SelectListItem>? AvailableSeatTypes { get; set; }
 
         // For batch creation
         [Display(Name = "Hàng bắt đầu (A-Z)")]
