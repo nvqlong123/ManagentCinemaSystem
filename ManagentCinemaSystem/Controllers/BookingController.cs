@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ManagentCinemaSystem.Controllers
 {
-    [Authorize(Roles = "Customer")] // Chỉ Customer mới được đặt vé
+    [Authorize(Roles = "Customer,Admin,Staff")]
     public class BookingController : Controller
     {
         private readonly ApplicationDbContext _context;

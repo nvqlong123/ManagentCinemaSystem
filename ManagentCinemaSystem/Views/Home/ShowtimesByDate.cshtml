@@ -5,15 +5,55 @@
     var selectedDate = ViewBag.SelectedDate as DateTime? ?? DateTime.Today;
     string sortBy = ViewBag.SortBy as string ?? "StartTime";
     string sortOrder = ViewBag.SortOrder as string ?? "asc";
+    string searchBy = ViewBag.SearchBy as string ?? "MovieTitle";
+    string keyword = ViewBag.Keyword as string ?? "";
     string nextOrder(string col) => (sortBy == col && sortOrder == "asc") ? "desc" : "asc";
 }
+@{
 
+    // Layout sẽ được quyết định bởi _ViewStart.cshtml của thư mục Views/Movie/
+    // Hoặc bạn có thể đặt Layout cụ thể ở đây nếu muốn, ví dụ: Layout = "_CustomerLayout";
+    // Để nhất quán, nên để _ViewStart.cshtml trong Views/Movie/ quyết định (ví dụ trỏ đến _CustomerLayout)
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            Layout = "_AdminLayout";
+        }
+        else if (User.IsInRole("Staff"))
+        {
+            Layout = "_StaffLayout";
+        }
+        else
+        {
+            Layout = "_CustomerLayout";
+        }
+    }
+    else
+    {
+        Layout = "_CustomerLayout"; // Layout cho người dùng chưa đăng nhập (trang Login, Register)
+    }
+}
 <h3 class="mb-3">Lịch chiếu phim trong ngày</h3>
 
-<form method="get" class="mb-3">
-    <label>Chọn ngày:</label>
-    <input type="date" name="date" value="@selectedDate.ToString("yyyy-MM-dd")" class="form-control" style="max-width: 250px; display: inline-block;" />
-    <button type="submit" class="btn btn-primary ms-2">Xem lịch</button>
+<form method="get" class="mb-3 d-flex flex-wrap align-items-end gap-2">
+    <div>
+        <label>Chọn ngày:</label>
+        <input type="date" name="date" value="@selectedDate.ToString("yyyy-MM-dd")" class="form-control" style="max-width: 180px;" />
+    </div>
+    <div>
+        <label>Tìm kiếm theo:</label>
+        <select name="searchBy" class="form-select" style="max-width: 140px;">
+            <option value="MovieTitle" selected="@(ViewBag.SearchBy as string == "MovieTitle" || ViewBag.SearchBy == null ? "selected" : null)">Phim</option>
+            <option value="CinemaName" selected="@(ViewBag.SearchBy as string == "CinemaName" ? "selected" : null)">Rạp</option>
+            <option value="RoomName" selected="@(ViewBag.SearchBy as string == "RoomName" ? "selected" : null)">Phòng</option>
+        </select>
+    </div>
+    <div>
+        <label>Từ khóa:</label>
+        <input type="text" name="keyword" value="@keyword" class="form-control" placeholder="Nhập từ khóa..." style="max-width: 180px;" />
+    </div>
+    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
 </form>
 
 @if (Model == null || !Model.Any())
@@ -26,22 +66,46 @@ else
         <thead>
             <tr>
                 <th>
-                    <a href="@Url.Action("ShowtimesByDate", new { date = selectedDate.ToString("yyyy-MM-dd"), sortBy = "MovieTitle", sortOrder = nextOrder("MovieTitle") })">
+                    <a href="@Url.Action("ShowtimesByDate", new { 
+                        date = selectedDate.ToString("yyyy-MM-dd"), 
+                        sortBy = "MovieTitle", 
+                        sortOrder = nextOrder("MovieTitle"),
+                        searchBy = searchBy,
+                        keyword = keyword
+                    })">
                         Phim @(sortBy == "MovieTitle" ? (sortOrder == "asc" ? "▲" : "▼") : "")
                     </a>
                 </th>
                 <th>
-                    <a href="@Url.Action("ShowtimesByDate", new { date = selectedDate.ToString("yyyy-MM-dd"), sortBy = "StartTime", sortOrder = nextOrder("StartTime") })">
+                    <a href="@Url.Action("ShowtimesByDate", new { 
+                        date = selectedDate.ToString("yyyy-MM-dd"), 
+                        sortBy = "StartTime", 
+                        sortOrder = nextOrder("StartTime"),
+                        searchBy = searchBy,
+                        keyword = keyword
+                    })">
                         Giờ chiếu @(sortBy == "StartTime" ? (sortOrder == "asc" ? "▲" : "▼") : "")
                     </a>
                 </th>
                 <th>
-                    <a href="@Url.Action("ShowtimesByDate", new { date = selectedDate.ToString("yyyy-MM-dd"), sortBy = "CinemaName", sortOrder = nextOrder("CinemaName") })">
+                    <a href="@Url.Action("ShowtimesByDate", new { 
+                        date = selectedDate.ToString("yyyy-MM-dd"), 
+                        sortBy = "CinemaName", 
+                        sortOrder = nextOrder("CinemaName"),
+                        searchBy = searchBy,
+                        keyword = keyword
+                    })">
                         Rạp @(sortBy == "CinemaName" ? (sortOrder == "asc" ? "▲" : "▼") : "")
                     </a>
                 </th>
                 <th>
-                    <a href="@Url.Action("ShowtimesByDate", new { date = selectedDate.ToString("yyyy-MM-dd"), sortBy = "RoomName", sortOrder = nextOrder("RoomName") })">
+                    <a href="@Url.Action("ShowtimesByDate", new { 
+                        date = selectedDate.ToString("yyyy-MM-dd"), 
+                        sortBy = "RoomName", 
+                        sortOrder = nextOrder("RoomName"),
+                        searchBy = searchBy,
+                        keyword = keyword
+                    })">
                         Phòng @(sortBy == "RoomName" ? (sortOrder == "asc" ? "▲" : "▼") : "")
                     </a>
                 </th>

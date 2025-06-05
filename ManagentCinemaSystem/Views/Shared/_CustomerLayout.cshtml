@@ -37,9 +37,7 @@
                             <a class="nav-link text-dark" asp-controller="Movie" asp-action="ListMovies">Danh Sách Phim</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-success text-white ms-2" style="font-weight:600;" asp-controller="Home" asp-action="ShowtimesByDate">
-                                <i class="fas fa-calendar-alt"></i> Đặt vé ngay
-                            </a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="ShowtimesByDate">Đặt vé</a>
                         </li>
                         @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Customer"))
                         {

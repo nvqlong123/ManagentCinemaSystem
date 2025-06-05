@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System;
 using ManagentCinemaSystem.Models.ManagentCinemaSystem.Models;
 using ManagentCinemaSystem.ViewModels.Showtime;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace ManagentCinemaSystem.Controllers
 {
@@ -25,7 +26,8 @@ namespace ManagentCinemaSystem.Controllers
         }
 
         // GET: /Home/ShowtimesByDate?date=yyyy-MM-dd
-        public async Task<IActionResult> ShowtimesByDate(DateTime? date, string sortBy, string sortOrder)
+        public async Task<IActionResult> ShowtimesByDate(
+    DateTime? date, string searchBy, string keyword, string sortBy, string sortOrder)
         {
             var selectedDate = date ?? DateTime.Today;
             var start = selectedDate.Date;
@@ -35,7 +37,21 @@ namespace ManagentCinemaSystem.Controllers
                 .Include(s => s.Movie)
                 .Include(s => s.Room).ThenInclude(r => r.Cinema)
                 .Where(s => s.StartTime >= start && s.StartTime < end);
-
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                switch (searchBy)
+                {
+                    case "CinemaName":
+                        query = query.Where(s => s.Room.Cinema.Name.Contains(keyword));
+                        break;
+                    case "RoomName":
+                        query = query.Where(s => s.Room.Name.Contains(keyword));
+                        break;
+                    default:
+                        query = query.Where(s => s.Movie.Title.Contains(keyword));
+                        break;
+                }
+            }
             // Sắp xếp
             sortBy = sortBy ?? "StartTime";
             sortOrder = sortOrder ?? "asc";
@@ -72,6 +88,8 @@ namespace ManagentCinemaSystem.Controllers
             ViewBag.SelectedDate = selectedDate;
             ViewBag.SortBy = sortBy;
             ViewBag.SortOrder = sortOrder;
+            ViewBag.SearchBy = searchBy;
+            ViewBag.Keyword = keyword;
             return View(showtimes);
         }
 
