@@ -1,0 +1,501 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model ManageSeatsViewModel
+
+@{
+    ViewData["Title"] = "Quản lý Ghế - Phòng: " + Model.RoomName;
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+    // --- Chuẩn bị dữ liệu cho sơ đồ ---
+    char maxRow = 'A';
+    int maxCol = 1;
+    Dictionary<(char, int), SeatViewModel> seatDictionary = new Dictionary<(char, int), SeatViewModel>();
+    Dictionary<int, string> seatTypeInfo = new Dictionary<int, string>();
+
+    if (Model.Seats.Any())
+    {
+        maxRow = Model.Seats.Max(s => s.Row);
+        maxCol = Model.Seats.Max(s => s.Col);
+        seatDictionary = Model.Seats.ToDictionary(s => (s.Row, s.Col));
+    }
+    else
+    {
+        maxRow = 'E'; // Mặc định 5 hàng nếu chưa có ghế
+        maxCol = 10;  // Mặc định 10 cột nếu chưa có ghế
+    }
+
+    if (Model.AvailableSeatTypes != null)
+    {
+        seatTypeInfo = Model.AvailableSeatTypes
+                            .Where(st => !string.IsNullOrEmpty(st.Value))
+                            .ToDictionary(st => int.Parse(st.Value), st => st.Text);
+    }
+    // --- Kết thúc chuẩn bị dữ liệu ---
+}
+
+<h1>@ViewData["Title"]</h1>
+<p>
+    Rạp: <a asp-controller="Cinema" asp-action="Details" asp-route-id="@Model.CinemaId"><strong>@Model.CinemaName</strong></a> |
+    Phòng: <a asp-controller="Room" asp-action="Details" asp-route-id="@Model.RoomId"><strong>@Model.RoomName</strong></a>
+</p>
+<p>
+    <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách phòng
+    </a>
+</p>
+<hr />
+
+<div id="alert-placeholder-top" class="mt-2 mb-3"></div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">@TempData["Warning"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">@TempData["Info"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <h3>Sơ đồ Ghế (<span id="seat-count-display">@Model.Seats.Count</span> ghế)</h3>
+        <p class="small text-muted">
+            <em>Nhấp vào ghế để sửa, nhấp vào ô trống để thêm ghế mới tại vị trí đó. Sử dụng icon <i class="bi bi-trash-fill text-danger"></i> để xóa ghế.</em>
+        </p>
+
+        <div class="seat-map-container border p-3 bg-light rounded shadow-sm mb-3">
+            <div class="screen-area text-center bg-dark text-white p-1 mb-3 rounded small">MÀN HÌNH</div>
+
+            <div class="d-flex justify-content-start mb-1 column-labels">
+                <div class="row-label me-2"></div>
+                @for (int col = 1; col <= maxCol; col++)
+                {
+                    <div class="col-label">@col</div>
+                }
+            </div>
+
+            @for (char row = 'A'; row <= maxRow; row++)
+            {
+                <div class="d-flex align-items-center mb-1 seat-row">
+                    <div class="row-label me-2">@row</div>
+                    <div class="d-flex flex-grow-1 justify-content-start">
+                        @for (int col = 1; col <= maxCol; col++)
+                        {
+                            var key = (row, col);
+                            seatDictionary.TryGetValue(key, out SeatViewModel currentSeat);
+
+                            if (currentSeat != null)
+                            {
+                                string seatClass = GetSeatClass(currentSeat.SeatTypeId);
+                                string seatTypeText = seatTypeInfo.GetValueOrDefault(currentSeat.SeatTypeId, "N/A");
+                                <a asp-controller="Seat" asp-action="Edit" asp-route-id="@currentSeat.Id"
+                                   id="seat-div-@currentSeat.Id" class="seat-link-wrapper"
+                                   title="Sửa ghế @row@col - Loại: @seatTypeText">
+                                    <div class="seat @seatClass">
+                                        <span class="seat-name">@row@col</span>
+                                        <div class="seat-actions-hover">
+                                            <button type="button" onclick="event.stopPropagation(); deleteSeat(@currentSeat.Id, '@row@col');" class="btn btn-sm btn-danger p-0 action-icon" title="Xóa ghế @row@col">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Seat" asp-action="Create" asp-route-roomId="@Model.RoomId" asp-route-row="@row" asp-route-col="@col"
+                                   class="seat seat-empty add-seat-btn-wrapper" title="Thêm ghế @row@col">
+                                    <i class="bi bi-plus-lg"></i>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mt-4 d-flex justify-content-center flex-wrap gap-2 small border-top pt-3">
+                @if (Model.AvailableSeatTypes != null)
+                {
+                    @foreach (var seatType in Model.AvailableSeatTypes)
+                    {
+                        if (!string.IsNullOrEmpty(seatType.Value))
+                        {
+                            int typeId = int.Parse(seatType.Value);
+                            string className = GetSeatClass(typeId);
+                            <span class="p-1 border rounded legend-item @className">
+                                <span class="legend-color-box @className"></span> @seatType.Text
+                            </span>
+                        }
+                    }
+                }
+                <span class="p-1 border rounded legend-item seat-unknown">
+                    <span class="legend-color-box seat-unknown"></span> Không xác định
+                </span>
+                <span class="p-1 border rounded legend-item">
+                    <span class="legend-color-box seat-empty-legend"></span> Trống
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <h3><i class="bi bi-magic"></i> Thêm Ghế Hàng Loạt</h3>
+        <form asp-controller="Seat" asp-action="BatchCreate" asp-route-roomId="@Model.RoomId" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+            <div class="mb-2">
+                <label asp-for="BatchStartRow" class="form-label fw-bold small"></label>
+                <input asp-for="BatchStartRow" class="form-control form-control-sm" placeholder="A" maxlength="1" style="text-transform:uppercase" />
+                <span asp-validation-for="BatchStartRow" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchEndRow" class="form-label fw-bold small"></label>
+                <input asp-for="BatchEndRow" class="form-control form-control-sm" placeholder="E" maxlength="1" style="text-transform:uppercase" />
+                <span asp-validation-for="BatchEndRow" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchStartCol" class="form-label fw-bold small"></label>
+                <input asp-for="BatchStartCol" type="number" class="form-control form-control-sm" placeholder="1" min="1" />
+                <span asp-validation-for="BatchStartCol" class="text-danger small"></span>
+            </div>
+            <div class="mb-2">
+                <label asp-for="BatchEndCol" class="form-label fw-bold small"></label>
+                <input asp-for="BatchEndCol" type="number" class="form-control form-control-sm" placeholder="10" min="1" />
+                <span asp-validation-for="BatchEndCol" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="BatchDefaultSeatTypeId" class="form-label fw-bold small"></label>
+                <select asp-for="BatchDefaultSeatTypeId" asp-items="Model.AvailableSeatTypes" class="form-select form-select-sm">
+                    <option value="">-- Chọn loại ghế --</option>
+                </select>
+                <span asp-validation-for="BatchDefaultSeatTypeId" class="text-danger small"></span>
+            </div>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Tạo hàng loạt</button>
+        </form>
+    </div>
+</div>
+
+
+@functions {
+    private string GetSeatClass(int seatTypeId)
+    {
+        switch (seatTypeId)
+        {
+            case 1: return "seat-type-1"; // Thường
+            case 2: return "seat-type-2"; // VIP
+            default: return "seat-unknown";
+        }
+    }
+}
+
+@section Styles {
+    <style>
+        .seat-map-container {
+            max-width: 100%;
+            margin: auto;
+            overflow-x: auto;
+        }
+
+        .screen-area {
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .column-labels, .seat-row {
+            gap: 4px;
+        }
+
+            .seat-row .d-flex {
+                gap: 4px;
+            }
+
+        .row-label {
+            width: 30px;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .col-label {
+            min-width: 42px;
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.85em;
+        }
+
+        .seat-link-wrapper, .add-seat-btn-wrapper {
+            display: inline-block;
+            text-decoration: none;
+            color: inherit;
+            margin: 1px; /* Đặt margin ở đây để áp dụng cho cả ghế và ô trống */
+        }
+
+        .seat {
+            border: 1px solid #ccc;
+            padding: 2px;
+            text-align: center;
+            font-size: 0.75em;
+            border-radius: 4px;
+            width: 42px;
+            height: 42px; /* Kích thước cố định */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+            box-sizing: border-box;
+            overflow: hidden;
+            white-space: nowrap;
+            cursor: pointer; /* Cho phép click */
+        }
+
+            .seat:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 8px rgba(0,0,0,0.2);
+                z-index: 10;
+            }
+
+        .seat-name {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 1px;
+            font-size: 0.9em;
+        }
+
+        .seat-type-1 {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+            color: #495057;
+        }
+        /* Thường */
+        .seat-type-2 {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #664d03;
+        }
+        /* VIP */
+        .seat-unknown {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+
+        .seat-empty {
+            border: 1px dashed #ced4da;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 42px;
+            height: 42px; /* Đồng bộ kích thước */
+            color: #6c757d;
+        }
+
+            .seat-empty:hover {
+                background-color: #e2e6ea;
+                border-style: solid;
+            }
+
+            .seat-empty i {
+                font-size: 1.2em;
+            }
+
+        .seat-actions-hover {
+            display: none;
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            z-index: 5;
+        }
+
+        .seat-link-wrapper:hover .seat-actions-hover {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-icon {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            padding: 0 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+        }
+
+            .action-icon .bi {
+                font-size: 0.8em;
+            }
+
+            .action-icon.btn-danger:hover {
+                background-color: #dc3545;
+                color: white;
+            }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .legend-color-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .legend-item.seat-type-1 .legend-color-box {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+
+        .legend-item.seat-type-2 .legend-color-box {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .legend-color-box.seat-empty-legend {
+            background-color: #f8f9fa;
+            border-style: dashed;
+            border-color: #ced4da;
+        }
+
+        .legend-color-box.seat-unknown {
+            background-color: #6c757d;
+        }
+
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        function getAntiForgeryToken() {
+            const tokenInput = document.querySelector("input[name='__RequestVerificationToken']");
+            if (!tokenInput) {
+                console.error("Anti-forgery token input not found.");
+                showTemporaryMessage('Lỗi bảo mật: Không tìm thấy Anti-Forgery Token.', 'danger');
+                return null;
+            }
+            return tokenInput.value;
+        }
+
+        function deleteSeat(seatId, seatName) {
+            // Ngăn sự kiện click của thẻ <a> cha (seat-link-wrapper) lan truyền khi xóa
+            event.preventDefault(); // Ngăn hành động mặc định của link (nếu nút xóa nằm trong link)
+            event.stopPropagation(); // Ngăn sự kiện nổi bọt lên thẻ <a> cha (quan trọng)
+
+            if (!confirm(`Bạn có chắc chắn muốn xóa ghế ${seatName}? Hành động này không thể hoàn tác và sẽ xóa ghế vĩnh viễn khỏi phòng.`)) {
+                return;
+            }
+
+            const token = getAntiForgeryToken();
+            if (!token) return;
+
+            showTemporaryMessage(`Đang xóa ghế ${seatName}...`, 'info');
+
+            fetch(`/Seat/Delete/${seatId}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => response.text()).then(err => {
+                        throw new Error(err.message || err || `Lỗi ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const seatLinkWrapper = document.getElementById(`seat-div-${seatId}`);
+                if (seatLinkWrapper) {
+                    // Tạo ô trống mới để thay thế
+                    const emptySeatLink = document.createElement('a');
+                    emptySeatLink.href = `@Url.Action("Create", "Seat", new { roomId = Model.RoomId })&row=${seatName.charAt(0)}&col=${seatName.substring(1)}`;
+                    emptySeatLink.className = 'seat seat-empty add-seat-btn-wrapper'; // Đảm bảo có class này
+                    emptySeatLink.title = `Thêm ghế ${seatName}`;
+                    emptySeatLink.innerHTML = '<i class="bi bi-plus-lg"></i>';
+
+                    // Thay thế ghế đã xóa bằng ô trống
+                    seatLinkWrapper.parentNode.replaceChild(emptySeatLink, seatLinkWrapper);
+                    updateSeatCount();
+                }
+                showTemporaryMessage(data.message || `Đã xóa ghế ${seatName}.`, 'success');
+            })
+            .catch(error => {
+                console.error("Lỗi khi xóa ghế:", error);
+                showTemporaryMessage(`Lỗi khi xóa ghế ${seatName}: ${error.message}`, 'danger');
+            });
+        }
+
+        function updateSeatCount() {
+            const countDisplay = document.getElementById('seat-count-display');
+            if (!countDisplay) return;
+            const currentSeats = document.querySelectorAll('a[id^="seat-div-"]').length; // Đếm số thẻ <a> của ghế
+            countDisplay.textContent = currentSeats;
+            const titleElement = document.querySelector('h3:first-of-type');
+            if (titleElement) {
+                titleElement.textContent = `Sơ đồ Ghế (${currentSeats} ghế)`;
+            }
+        }
+
+        function showTemporaryMessage(message, type = 'info') {
+            let placeholder = document.getElementById('alert-placeholder-top');
+            if (!placeholder) {
+                const h1 = document.querySelector('h1');
+                if (h1) {
+                    placeholder = document.createElement('div');
+                    placeholder.id = 'alert-placeholder-top';
+                    placeholder.className = 'mt-2 mb-3';
+                    h1.parentNode.insertBefore(placeholder, h1.nextSibling);
+                } else { alert(message); return; }
+            }
+            placeholder.innerHTML = '';
+            const wrapper = document.createElement('div');
+            const alertType = type === 'danger' ? 'alert-danger' : (type === 'success' ? 'alert-success' : 'alert-info');
+            wrapper.innerHTML = `
+                <div class="alert ${alertType} alert-dismissible fade show" role="alert">
+                    <div>${message}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            placeholder.append(wrapper.firstElementChild);
+            const alertElement = placeholder.querySelector('.alert');
+            try {
+                const bsAlert = new bootstrap.Alert(alertElement);
+                setTimeout(() => { bsAlert.close(); }, 5000);
+            } catch (e) {
+                setTimeout(() => { alertElement?.remove(); }, 5000);
+            }
+        }
+
+        document.querySelectorAll('input[name="BatchStartRow"], input[name="BatchEndRow"]').forEach(input => {
+            input.addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+        });
+    </script>
+}

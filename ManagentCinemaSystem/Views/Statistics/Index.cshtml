@@ -1,0 +1,162 @@
+﻿@model ManagentCinemaSystem.ViewModels.Statistics.StatisticsViewModel
+@{
+    ViewData["Title"] = "Thống kê hệ thống";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+<h2 class="mb-4"><i class="fas fa-chart-bar"></i> Thống kê hệ thống</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-success h-100 shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-coins fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Tổng doanh thu</h5>
+                        <h3 class="card-text">@Model.TotalRevenue.ToString("N0") VNĐ</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-primary h-100 shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-ticket-alt fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Tổng số vé đã bán</h5>
+                        <h3 class="card-text">@Model.TotalTickets</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-info h-100 shadow">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-users fa-2x me-3"></i>
+                    <div>
+                        <h5 class="card-title mb-1">Khách hàng đã mua vé</h5>
+                        <h3 class="card-text">@Model.TotalCustomers</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <i class="fas fa-calendar-day"></i> Doanh thu 7 ngày gần nhất
+            </div>
+            <div class="card-body p-2">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light"><tr><th>Ngày</th><th>Doanh thu (VNĐ)</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model.RevenueByDates)
+                        {
+                            <tr>
+                                <td>@r.Date.ToString("dd/MM/yyyy")</td>
+                                <td>@r.TotalRevenue.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <i class="fas fa-film"></i> Top 5 phim doanh thu cao nhất
+            </div>
+            <div class="card-body p-2">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light"><tr><th>Phim</th><th>Doanh thu (VNĐ)</th></tr></thead>
+                    <tbody>
+                        @foreach (var m in Model.RevenueByMovies)
+                        {
+                            <tr>
+                                <td>@m.MovieTitle</td>
+                                <td>@m.TotalRevenue.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <i class="fas fa-chair"></i> Top 5 suất chiếu gần nhất - Tỷ lệ lấp đầy
+            </div>
+            <div class="card-body p-2">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Phim</th>
+                            <th>Giờ chiếu</th>
+                            <th>Phòng</th>
+                            <th>Tổng ghế</th>
+                            <th>Đã đặt</th>
+                            <th>Lấp đầy (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.ShowOccupancies)
+                        {
+                            <tr>
+                                <td>@s.MovieTitle</td>
+                                <td>@s.StartTime.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@s.RoomName</td>
+                                <td>@s.TotalSeats</td>
+                                <td>@s.BookedSeats</td>
+                                <td>@s.OccupancyRate</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <i class="fas fa-user-tie"></i> Top 5 khách hàng đặt vé nhiều nhất
+            </div>
+            <div class="card-body p-2">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên khách hàng</th>
+                            <th>Email</th>
+                            <th>Số vé</th>
+                            <th>Tổng chi tiêu (VNĐ)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.TopCustomers)
+                        {
+                            <tr>
+                                <td>@c.CustomerName</td>
+                                <td>@c.Email</td>
+                                <td>@c.TotalTickets</td>
+                                <td>@c.TotalSpent.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

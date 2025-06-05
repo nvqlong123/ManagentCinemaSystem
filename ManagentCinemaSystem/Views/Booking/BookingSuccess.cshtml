@@ -1,0 +1,58 @@
+﻿@using ManagentCinemaSystem.Models // Model Booking thực tế
+@model Booking
+
+@{
+    ViewData["Title"] = "Đặt vé Thành Công";
+    var firstShowSeat = Model.ShowSeats.FirstOrDefault(); // Lấy thông tin show từ ghế đầu tiên
+	Layout = "_CustomerLayout"; // Sử dụng layout cho khách hàng"
+}
+
+<div class="container mt-4 text-center">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Đặt vé thành công!</h4>
+        <p>Cảm ơn bạn đã đặt vé xem phim. Dưới đây là thông tin chi tiết vé của bạn.</p>
+        <hr>
+        <p class="mb-0">Mã đặt vé của bạn là: <strong>#@Model.Id</strong></p>
+    </div>
+
+    @if (firstShowSeat != null)
+    {
+        <div class="card mt-4 mx-auto" style="max-width: 600px;">
+            <div class="card-header">
+                Chi tiết vé - Mã #@Model.Id
+            </div>
+            <div class="card-body text-start">
+                <h5 class="card-title">@firstShowSeat.Show.Movie.Title</h5>
+                <p class="card-text">
+                    <strong>Rạp:</strong> @firstShowSeat.Show.Room.Cinema.Name <br />
+                    <strong>Phòng:</strong> @firstShowSeat.Show.Room.Name <br />
+                    <strong>Suất chiếu:</strong> @firstShowSeat.Show.StartTime.ToString("HH:mm dd/MM/yyyy") <br />
+                    <strong>Ngày đặt:</strong> @Model.Purchased.ToLocalTime().ToString("HH:mm dd/MM/yyyy") <br />
+                    <strong>Ghế:</strong>
+                    @foreach (var ss in Model.ShowSeats.OrderBy(s => s.Seat.Row).ThenBy(s => s.Seat.Col))
+                    {
+                        <span class="badge bg-secondary me-1">@ss.Seat.Row@ss.Seat.Col</span>
+                    }
+                </p>
+                <hr />
+                <p class="text-end fs-5">
+                    <strong>Tổng tiền: <span class="text-danger">@Model.TotalCost.ToString("N0") VNĐ</span></strong>
+                </p>
+            </div>
+            <div class="card-footer text-muted">
+                Vui lòng đưa mã đặt vé này cho nhân viên tại quầy vé.
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-danger">Không thể hiển thị chi tiết vé do thiếu thông tin suất chiếu.</p>
+    }
+
+
+    <div class="mt-4">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về Trang Chủ</a>
+        <a asp-action="MyBookings" class="btn btn-info">Xem Lịch Sử Đặt Vé</a>
+    </div>
+
+</div>

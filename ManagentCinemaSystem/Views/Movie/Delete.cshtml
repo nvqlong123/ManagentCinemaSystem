@@ -1,0 +1,74 @@
+﻿@model ManagentCinemaSystem.Models.Movie
+
+@{
+    ViewData["Title"] = "Xác nhận xóa phim";
+    bool hasShows = ViewBag.HasShows ?? false;
+	Layout = "_AdminLayout"; // Sử dụng layout cho Admin
+}
+
+<h1>@ViewData["Title"]: @Model.Title</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (hasShows)
+{
+    <div class="alert alert-warning">
+        <strong>Cảnh báo!</strong> Phim này hiện đang có suất chiếu. Bạn không thể xóa phim này cho đến khi tất cả các suất chiếu liên quan được xóa.
+    </div>
+}
+else
+{
+    <h3>Bạn có chắc chắn muốn xóa phim này không?</h3>
+    <p class="text-danger">Hành động này không thể hoàn tác.</p>
+}
+
+
+<div>
+    <h4>Thông tin phim</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">Tên phim</dt>
+        <dd class="col-sm-9">@Model.Title</dd>
+
+        <dt class="col-sm-3">Đạo diễn</dt>
+        <dd class="col-sm-9">@Model.Director</dd>
+
+        <dt class="col-sm-3">Ngày phát hành</dt>
+        <dd class="col-sm-9">@Model.ReleaseDate.ToString("dd/MM/yyyy")</dd>
+        <dt class="col-sm-3">Poster</dt>
+        <dd class="col-sm-9">
+            @if (!string.IsNullOrEmpty(Model.Poster))
+            {
+                <img src="@Model.Poster" alt="Poster" style="max-width: 150px; height: auto;" />
+            }
+            else
+            {
+                <span>Không có poster</span>
+            }
+        </dd>
+    </dl>
+
+    @if (!hasShows)
+    {
+        // Action DeleteConfirmed có route là "Movie/DeleteConfirmed/{id}"
+        // và ActionName là "Delete".
+        // Tag helper asp-action="Delete" sẽ tìm action tên "Delete"
+        // và asp-route-id sẽ thêm id vào route.
+        // Nó sẽ hoạt động vì ActionName("Delete") trên DeleteConfirmed.
+        <form asp-controller="Movie" asp-action="Delete" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            @* Không cần input hidden asp-for="Id" vì id đã có trong route *@
+            <button type="submit" class="btn btn-danger">Xóa phim</button>
+            <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+        </form>
+    }
+    else
+    {
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    }
+    //đặt vé ngay tại đây
+
+</div>

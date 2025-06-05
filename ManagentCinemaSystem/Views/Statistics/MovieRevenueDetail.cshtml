@@ -1,0 +1,9 @@
+﻿@model ManagentCinemaSystem.ViewModels.Statistics.RevenueByMovie
+
+@{
+    ViewData["Title"] = "Chi tiết doanh thu phim";
+}
+
+<h3>Doanh thu phim: @Model.MovieTitle</h3>
+<p>Tổng doanh thu: <strong>@Model.TotalRevenue.ToString("N0") VNĐ</strong></p>
+<a asp-action="Index" class="btn btn-secondary">Quay lại thống kê</a>

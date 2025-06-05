@@ -1,0 +1,72 @@
+﻿@using ManagentCinemaSystem.ViewModels.Booking
+@model BookingConfirmationViewModel
+
+@{
+    ViewData["Title"] = "Xác nhận Đặt vé";
+	Layout = "_CustomerLayout"; // Sử dụng layout cho khách hàng"
+}
+
+<div class="container mt-4">
+    <h2>Xác nhận thông tin đặt vé</h2>
+    <hr />
+
+    <div class="card">
+        <div class="card-header">
+            Thông tin suất chiếu
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">@Model.MovieTitle</h5>
+            <p class="card-text">
+                <strong>Rạp:</strong> @Model.CinemaName - <strong>Phòng:</strong> @Model.RoomName <br />
+                <strong>Thời gian:</strong> @Model.StartTime.ToString("HH:mm dd/MM/yyyy")
+            </p>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Thông tin khách hàng
+        </div>
+        <div class="card-body">
+            <p><strong>Tên:</strong> @Model.CustomerName</p>
+            <p><strong>Email:</strong> @Model.CustomerEmail</p>
+        </div>
+    </div>
+
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Ghế đã chọn
+        </div>
+        <ul class="list-group list-group-flush">
+            @foreach (var seat in Model.SelectedSeatDetails)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>Ghế <strong>@seat.SeatRow@seat.SeatCol</strong> (@seat.SeatTypeName)</span>
+                    <span class="badge bg-primary rounded-pill">@seat.SeatTypeCost.ToString("N0") VNĐ</span>
+                </li>
+            }
+        </ul>
+        <div class="card-footer text-end">
+            <strong>Tổng cộng: <span class="text-danger fs-5">@Model.TotalCost.ToString("N0") VNĐ</span></strong>
+        </div>
+    </div>
+
+    <form asp-action="CompleteBooking" method="post" class="mt-4">
+        @* === QUAN TRỌNG: Truyền lại các ID ghế đã chọn === *@
+        @foreach (var seatId in Model.SelectedShowSeatIds)
+        {
+            <input type="hidden" name="SelectedShowSeatIds" value="@seatId" />
+        }
+        <input type="hidden" asp-for="ShowId" />
+        <input type="hidden" asp-for="TotalCost" /> @* Truyền lại tổng tiền để kiểm tra nếu muốn *@
+
+        @Html.AntiForgeryToken() @* Chống tấn công CSRF *@
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success btn-lg">Xác nhận và Đặt vé</button>
+            @* Nút quay lại trang chọn ghế *@
+            <a asp-action="SelectSeats" asp-route-showId="@Model.ShowId" class="btn btn-secondary btn-lg">Chọn lại ghế</a>
+        </div>
+    </form>
+</div>

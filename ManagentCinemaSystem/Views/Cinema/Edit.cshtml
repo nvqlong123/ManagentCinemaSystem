@@ -1,0 +1,50 @@
+﻿@model ManagentCinemaSystem.ViewModels.CinemaViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa rạp chiếu phim";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.Name</span></h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-controller="Cinema" asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null)
+            {
+                <div class="alert alert-danger small">
+                    @foreach (var error in ViewData.ModelState[string.Empty].Errors)
+                    {
+                        <span>@error.ErrorMessage</span>
+
+                        <br />
+                    }
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-bold"></label>
+                <input asp-for="Name" class="form-control form-control-sm" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Address" class="form-label fw-bold"></label>
+                <textarea asp-for="Address" class="form-control form-control-sm" rows="3"></textarea>
+                <span asp-validation-for="Address" class="text-danger small"></span>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                <a asp-controller="Cinema" asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

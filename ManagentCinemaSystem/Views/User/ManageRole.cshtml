@@ -1,0 +1,49 @@
+﻿@using ManagentCinemaSystem.ViewModels.Admin
+@model UserRoleViewModel
+
+@{
+    ViewData["Title"] = "Quản lý vai trò";
+	Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"] cho: <span class="text-primary">@Model.UserName</span></h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-controller="User" asp-action="ManageRole" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserId" />
+            <input type="hidden" asp-for="UserName" />
+            <div asp-validation-summary="All" class="text-danger small"></div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="SelectedRoleName" class="form-label fw-bold"></label>
+                <select asp-for="SelectedRoleName" asp-items="Model.AvailableRoles" class="form-select form-select-sm">
+                    <option value="">-- Bỏ chọn vai trò (Không có vai trò) --</option>
+                </select>
+                <span asp-validation-for="SelectedRoleName" class="text-danger small"></span>
+                <div class="form-text small">Chọn một vai trò cho người dùng này. Nếu bỏ trống, người dùng sẽ không có vai trò nào (không khuyến khích cho Admin/Staff).</div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Lưu vai trò</button>
+                <a asp-controller="User" asp-action="Details" asp-route-id="@Model.UserId" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

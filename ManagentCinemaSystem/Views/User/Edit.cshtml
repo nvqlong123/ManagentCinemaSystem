@@ -1,0 +1,66 @@
+﻿@using ManagentCinemaSystem.ViewModels.Admin
+@model UserEditViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa người dùng";
+    Layout = "_AdminLayout";
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.UserName</span></h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-7">
+        <form asp-controller="User" asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="text-danger small"></div>
+
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label fw-bold"></label>
+                <input asp-for="UserName" class="form-control form-control-sm" />
+                <span asp-validation-for="UserName" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-bold"></label>
+                <input asp-for="Email" class="form-control form-control-sm" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-bold"></label>
+                <input asp-for="Name" class="form-control form-control-sm" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label fw-bold"></label>
+                <input asp-for="Phone" class="form-control form-control-sm" />
+                <span asp-validation-for="Phone" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label fw-bold"></label>
+                <select asp-for="Status" asp-items="Model.AvailableStatuses" class="form-select form-select-sm"></select>
+                <span asp-validation-for="Status" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input asp-for="EmailConfirmed" class="form-check-input" />
+                <label asp-for="EmailConfirmed" class="form-check-label fw-bold"></label>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                <a asp-controller="User" asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

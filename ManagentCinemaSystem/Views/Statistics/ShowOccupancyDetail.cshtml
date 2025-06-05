@@ -1,0 +1,16 @@
+﻿@model ManagentCinemaSystem.ViewModels.Statistics.ShowOccupancy
+
+@{
+    ViewData["Title"] = "Chi tiết suất chiếu";
+}
+
+<h3>Chi tiết suất chiếu</h3>
+<ul>
+    <li><strong>Phim:</strong> @Model.MovieTitle</li>
+    <li><strong>Giờ chiếu:</strong> @Model.StartTime.ToString("dd/MM/yyyy HH:mm")</li>
+    <li><strong>Phòng:</strong> @Model.RoomName</li>
+    <li><strong>Tổng ghế:</strong> @Model.TotalSeats</li>
+    <li><strong>Đã đặt:</strong> @Model.BookedSeats</li>
+    <li><strong>Tỷ lệ lấp đầy:</strong> @Model.OccupancyRate %</li>
+</ul>
+<a asp-action="Index" class="btn btn-secondary">Quay lại thống kê</a>

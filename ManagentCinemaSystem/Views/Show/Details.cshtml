@@ -1,0 +1,299 @@
+﻿@* File: Views/Show/Details.cshtml *@
+@using ManagentCinemaSystem.ViewModels 
+@using ManagentCinemaSystem.Models   
+@model ShowDetailsViewModel           // <<<=== THAY ĐỔI @MODEL THÀNH ShowDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết Suất chiếu";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+    // seatTypeNames giờ là một phần của Model, không cần lấy từ ViewBag hay inject
+    var seatTypeNames = Model.SeatTypeNames ?? new Dictionary<int, string>();
+}
+
+<h1>@ViewData["Title"]</h1>
+<h4>Phim: <span class="text-primary">@Model.Show.Movie.Title</span></h4>
+
+<p>
+    <a asp-controller="Show" asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách suất chiếu
+    </a>
+</p>
+<hr />
+
+@if (TempData["Error"] != null) // Hiển thị lỗi nếu có từ action Edit (ví dụ: không cho sửa khi có vé đặt)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">ID Suất chiếu</dt>
+        <dd class="col-sm-9">@Model.Show.Id</dd>
+
+        <dt class="col-sm-3">Tên phim</dt>
+        <dd class="col-sm-9">
+            <a asp-controller="Movie" asp-action="Edit" asp-route-id="@Model.Show.MovieId">@Model.Show.Movie.Title</a>
+        </dd>
+
+        <dt class="col-sm-3">Thời lượng phim</dt>
+        <dd class="col-sm-9">@Model.Show.Movie.Duration phút</dd>
+
+        <dt class="col-sm-3">Rạp</dt>
+        <dd class="col-sm-9">
+            <a asp-controller="Cinema" asp-action="Details" asp-route-id="@Model.Show.Room.CinemaId">@Model.Show.Room.Cinema.Name</a>
+        </dd>
+
+        <dt class="col-sm-3">Phòng chiếu</dt>
+        <dd class="col-sm-9">
+            <a asp-controller="Room" asp-action="Details" asp-route-id="@Model.Show.RoomId">@Model.Show.Room.Name</a>
+        </dd>
+
+        <dt class="col-sm-3">Thời gian bắt đầu</dt>
+        <dd class="col-sm-9">@Model.Show.StartTime.ToString("dd/MM/yyyy HH:mm")</dd>
+
+        <dt class="col-sm-3">Thời gian kết thúc</dt>
+        <dd class="col-sm-9">@Model.Show.EndTime.ToString("dd/MM/yyyy HH:mm")</dd>
+
+        <dt class="col-sm-3">Tổng số ghế</dt>
+        <dd class="col-sm-9">@Model.Show.ShowSeats.Count</dd>
+
+        <dt class="col-sm-3">Số ghế đã đặt</dt>
+        <dd class="col-sm-9">@Model.Show.ShowSeats.Count(ss => ss.IsBooked)</dd>
+
+        <dt class="col-sm-3">Số ghế còn trống</dt>
+        <dd class="col-sm-9">@Model.Show.ShowSeats.Count(ss => !ss.IsBooked)</dd>
+    </dl>
+
+    <h4 class="mt-4">Sơ đồ ghế của suất chiếu:</h4>
+    @if (Model.Show.ShowSeats.Any())
+    {
+        // Lấy danh sách các ghế vật lý từ ShowSeats để xác định kích thước sơ đồ
+        var physicalSeatsInShow = Model.Show.ShowSeats.Select(ss => ss.Seat).ToList();
+        char maxRow = physicalSeatsInShow.Any() ? physicalSeatsInShow.Max(s => s.Row) : 'A';
+        int maxCol = physicalSeatsInShow.Any() ? physicalSeatsInShow.Max(s => s.Col) : 1;
+        // Tạo Dictionary từ ShowSeats để dễ dàng tìm thông tin ShowSeat dựa trên tọa độ (Hàng, Cột) của ghế vật lý
+        var showSeatDictionary = Model.Show.ShowSeats.ToDictionary(ss => (ss.Seat.Row, ss.Seat.Col));
+
+        <div class="seat-map-container border p-3 bg-light rounded shadow-sm mt-2">
+            <div class="screen-area text-center bg-dark text-white p-1 mb-3 rounded small">MÀN HÌNH</div>
+            <div class="d-flex justify-content-start mb-1 column-labels">
+                <div class="row-label me-2" style="width: 30px; min-width:30px;"></div>
+                @for (int col = 1; col <= maxCol; col++)
+                {
+                    <div class="col-label">@col</div>
+                }
+            </div>
+            @for (char row = 'A'; row <= maxRow; row++)
+            {
+                <div class="d-flex align-items-center mb-1 seat-row">
+                    <div class="row-label me-2">@row</div>
+                    <div class="d-flex flex-grow-1 justify-content-start">
+                        @for (int col = 1; col <= maxCol; col++)
+                        {
+                            ShowSeat currentShowSeat = null;
+                            showSeatDictionary.TryGetValue((row, col), out currentShowSeat);
+
+                            if (currentShowSeat != null) // Nếu có ShowSeat (nghĩa là có ghế vật lý tại vị trí này trong phòng và thuộc suất chiếu)
+                            {
+                                string seatClass = GetSeatClass(currentShowSeat.Seat.SeatTypeId);
+                                string seatBookedClass = currentShowSeat.IsBooked ? "seat-booked" : "seat-available";
+                                string seatTypeText = seatTypeNames.GetValueOrDefault(currentShowSeat.Seat.SeatTypeId, "N/A");
+                                <div class="seat @seatClass @seatBookedClass" title="Ghế @row@col - Loại: @seatTypeText @(currentShowSeat.IsBooked ? "- Đã đặt" : "- Còn trống")">
+                                    <span class="seat-name">@row@col</span>
+                                </div>
+                            }
+                            else
+                            {
+                                // Ô này không có ghế vật lý tương ứng trong phòng chiếu này
+                                <div class="seat seat-placeholder"></div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+            <div class="mt-3 d-flex justify-content-center flex-wrap gap-2 small border-top pt-3">
+                @foreach (var seatTypePair in seatTypeNames.OrderBy(st => st.Key))
+                {
+                    <span class="p-1 border rounded legend-item @GetSeatClass(seatTypePair.Key)">
+                        <span class="legend-color-box @GetSeatClass(seatTypePair.Key)"></span> @seatTypePair.Value
+                    </span>
+                }
+                <span class="p-1 border rounded legend-item seat-booked">
+                    <span class="legend-color-box seat-booked"></span> Đã đặt
+                </span>
+                <span class="p-1 border rounded legend-item seat-placeholder">
+                    <span class="legend-color-box seat-placeholder"></span> Không có ghế
+                </span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="fst-italic">Không có thông tin ghế cho suất chiếu này (có thể phòng chưa được thiết lập ghế, hoặc suất chiếu chưa có ghế).</p>
+    }
+</div>
+<div class="mt-4">
+    <a asp-controller="Show" asp-action="Edit" asp-route-id="@Model.Show.Id" class="btn btn-primary">Chỉnh sửa suất chiếu</a>
+    <a asp-controller="Show" asp-action="Delete" asp-route-id="@Model.Show.Id" class="btn btn-danger">Xóa suất chiếu</a>
+</div>
+
+@functions {
+    // Hàm helper GetSeatClass giữ nguyên
+    private string GetSeatClass(int seatTypeId)
+    {
+        switch (seatTypeId)
+        {
+            case 1: return "seat-type-1";
+            case 2: return "seat-type-2";
+            default: return "seat-unknown";
+        }
+    }
+}
+
+@section Styles {
+        @* CSS giữ nguyên như trước *@
+    <style>
+        .seat-map-container {
+            max-width: 100%;
+            margin: auto;
+            overflow-x: auto;
+        }
+
+        .screen-area {
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .column-labels, .seat-row {
+            gap: 4px;
+        }
+
+            .seat-row .d-flex {
+                gap: 4px;
+            }
+
+        .row-label {
+            width: 30px;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .col-label {
+            min-width: 38px;
+            text-align: center;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.85em;
+        }
+
+        .seat {
+            border: 1px solid #ccc;
+            padding: 2px;
+            text-align: center;
+            font-size: 0.75em;
+            border-radius: 4px;
+            min-width: 38px;
+            height: 38px;
+            margin: 1px;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .seat-name {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 1px;
+        }
+
+        .seat-type-1 {
+            background-color: #ffffff;
+            border-color: #adb5bd;
+            color: #212529;
+        }
+
+        .seat-type-2 {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+
+        .seat-unknown {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+
+        .seat-placeholder {
+            border: 1px solid transparent;
+            background-color: transparent;
+            visibility: hidden;
+        }
+        /* Ẩn hoàn toàn ô không có ghế */
+
+        .seat-booked {
+            background-color: #6c757d !important;
+            color: white !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        /* Xám cho ghế đã đặt */
+        .seat-available {
+        }
+        /* Ghế còn trống không cần style đặc biệt ngoài màu loại ghế */
+        /* Bỏ hover ở trang details vì không có action click trực tiếp trên ghế */
+        /* .seat-available:hover { transform: scale(1.1); box-shadow: 0 0 5px rgba(0,123,255,.5); cursor:pointer; } */
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .legend-color-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+            .legend-color-box.seat-type-1 {
+                background-color: #ffffff;
+                border-color: #adb5bd;
+            }
+
+            .legend-color-box.seat-type-2 {
+                background-color: #ffc107;
+                border-color: #ffc107;
+            }
+
+            .legend-color-box.seat-unknown {
+                background-color: #6c757d;
+            }
+
+            .legend-color-box.seat-booked {
+                background-color: #6c757d !important;
+            }
+
+            .legend-color-box.seat-placeholder {
+                background-color: transparent;
+                border-color: transparent;
+            }
+    </style>
+}

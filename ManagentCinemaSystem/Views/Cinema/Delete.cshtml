@@ -1,0 +1,72 @@
+﻿@model ManagentCinemaSystem.Models.Cinema
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Rạp";
+    bool canDelete = ViewBag.CanDelete ?? true; // Mặc định là có thể xóa nếu ViewBag không được set
+	Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Sử dụng layout cho Admin
+}
+
+<h1>@ViewData["Title"]: <span class="text-danger">@Model.Name</span></h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+@if (!canDelete)
+{
+    <div class="alert alert-warning mt-3">
+        <strong>Không thể xóa!</strong> Rạp chiếu phim này hiện đang có <strong>@Model.Rooms.Count</strong> phòng chiếu liên kết.
+        Vui lòng xóa hoặc di chuyển các phòng chiếu này trước khi xóa rạp.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        <h5>Cảnh báo!</h5>
+        <p>Bạn có chắc chắn muốn xóa vĩnh viễn rạp chiếu phim <strong>@Model.Name</strong> không?</p>
+        <p class="text-danger fw-bold">Hành động này không thể hoàn tác.</p>
+    </div>
+}
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Address)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Address)
+        </dd>
+        <dt class="col-sm-3">
+            Số phòng hiện tại
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Rooms.Count
+        </dd>
+    </dl>
+
+    @if (canDelete)
+    {
+        <form asp-controller="Cinema" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-3">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Xác nhận Xóa Rạp</button>
+            <a asp-controller="Cinema" asp-action="Index" class="btn btn-secondary">Hủy</a>
+        </form>
+    }
+    else
+    {
+        <a asp-controller="Cinema" asp-action="Index" class="btn btn-secondary">Quay lại danh sách Rạp</a>
+        <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.Id" class="btn btn-warning ms-2">Đi đến quản lý phòng</a>
+    }
+</div>

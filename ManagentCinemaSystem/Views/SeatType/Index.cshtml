@@ -1,0 +1,77 @@
+﻿@model IEnumerable<ManagentCinemaSystem.Models.SeatType>
+
+@{
+    ViewData["Title"] = "Quản lý Loại ghế";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-controller="SeatType" asp-action="Create" class="btn btn-primary mb-3">
+        <i class="bi bi-plus-circle"></i> Thêm loại ghế mới
+    </a>
+</p>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.First().Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.First().Cost)
+                </th>
+                <th>Số ghế sử dụng</th>
+                <th style="min-width: 150px;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @item.Cost.ToString("N0") VNĐ
+                    </td>
+                    <td>
+                        @item.Seats.Count
+                        @* Để có Seats.Count, bạn cần Include(st => st.Seats) trong action Index *@
+                        @* Hiện tại controller chưa Include, nên sẽ là 0. Để có số lượng, cần sửa Controller: *@
+                        @* var seatTypes = await _context.SeatTypes.Include(st => st.Seats).OrderBy(st => st.Name).ToListAsync(); *@
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-controller="SeatType" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Sửa</a>
+                            <a asp-controller="SeatType" asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Xóa</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center fst-italic">Chưa có loại ghế nào được tạo.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

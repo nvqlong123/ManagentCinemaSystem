@@ -1,0 +1,197 @@
+﻿@model ManagentCinemaSystem.ViewModels.Staff.BookingListViewModel
+@* Hoặc namespace ViewModel của bạn *@
+
+@{
+    ViewData["Title"] = "Quản lý Tất cả Đặt vé";
+    var prevDisabled = !Model.Bookings.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.Bookings.HasNextPage ? "disabled" : "";
+    if (User.IsInRole("Admin"))
+    {
+        Layout = "_AdminLayout";
+    }
+    else if (User.IsInRole("Staff"))
+    {
+        Layout = "_StaffLayout";
+    }
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@* === FORM FILTER === *@
+<form asp-action="AllBookings" method="get" class="mb-4 p-3 border rounded bg-light">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="SearchTerm" class="form-label"></label>
+            <input asp-for="SearchTerm" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="StatusFilter" class="form-label"></label>
+            <select asp-for="StatusFilter" asp-items="Model.StatusOptions" class="form-select">
+                <option value="">-- Tất cả trạng thái --</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="CinemaFilter" class="form-label"></label>
+            <select asp-for="CinemaFilter" asp-items="Model.CinemaOptions" class="form-select">
+                <option value="">-- Tất cả rạp --</option>
+            </select>
+        </div>
+    </div>
+    <div class="row g-3 mt-2">
+        <div class="col-md-3">
+            <label asp-for="DateFromFilter" class="form-label"></label>
+            <input asp-for="DateFromFilter" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="DateToFilter" class="form-label"></label>
+            <input asp-for="DateToFilter" type="date" class="form-control" />
+        </div>
+        @*
+        <div class="col-md-4">
+            <label asp-for="MovieFilter" class="form-label"></label>
+            <select asp-for="MovieFilter" asp-items="Model.MovieOptions" class="form-select">
+                <option value="">-- Tất cả phim --</option>
+            </select>
+        </div>
+        *@
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Lọc danh sách</button>
+        <a asp-action="AllBookings" class="btn btn-secondary">Xóa bộ lọc</a>
+    </div>
+</form>
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+
+@if (Model.Bookings == null || !Model.Bookings.Any())
+{
+    <div class="alert alert-info">Không tìm thấy đặt vé nào khớp với điều kiện lọc.</div>
+}
+else
+{
+    <p>Tìm thấy <strong>@Model.Bookings.TotalItemCount</strong> đặt vé. Hiển thị trang @Model.Bookings.PageIndex / @Model.Bookings.TotalPages.</p>
+    @* Cần hàm TotalItemCount() trong PaginatedList nếu muốn hiển thị tổng số item *@
+
+
+    <table class="table table-bordered table-hover table-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Mã Vé</th>
+                <th>Khách hàng</th>
+                <th>Phim</th>
+                <th>Rạp - Phòng</th>
+                <th>Ngày tạo</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>NV Xác nhận</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Bookings)
+            {
+                var firstShowSeat = item.ShowSeats.FirstOrDefault();
+                var movieTitle = firstShowSeat?.Show?.Movie?.Title ?? "N/A";
+                var cinemaName = firstShowSeat?.Show?.Room?.Cinema?.Name ?? "N/A";
+                var roomName = firstShowSeat?.Show?.Room?.Name ?? "N/A";
+                var customerName = item.Customer?.Name ?? "Khách vãng lai";
+                var staffName = item.StaffConfirmed?.UserName ?? "Not track";
+
+                <tr>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id"><strong>@item.BookingCode</strong></a>
+                    </td>
+                    <td>@customerName</td>
+                    <td>@movieTitle</td>
+                    <td>@cinemaName - @roomName</td>
+                    <td>@item.Purchased.ToLocalTime().ToString("dd/MM/yy HH:mm")</td>
+                    <td class="text-end">@item.TotalCost.ToString("N0")</td>
+                    <td>
+                        @if (item.Status == "PendingPayment") { <span class="badge bg-warning text-dark">@item.Status</span> }
+                        else if (item.Status == "Confirmed") { <span class="badge bg-success">@item.Status</span> }
+                        else if (item.Status == "Expired") { <span class="badge bg-danger">@item.Status</span> }
+                        else { <span class="badge bg-secondary">@item.Status</span> }
+                    </td>
+                    <td>@staffName</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                        @if (item.Status == "PendingPayment" && (item.PaymentDeadline == null || item.PaymentDeadline > DateTimeOffset.UtcNow))
+                        {
+                            <form asp-action="ConfirmPayment" asp-route-bookingId="@item.Id" method="post" class="d-inline mx-1" onsubmit="return confirm('Xác nhận thanh toán cho đặt vé @item.BookingCode?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Xác nhận Thanh toán">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            </form>
+                        }
+                        @if (item.Status == "PendingPayment" || item.Status == "Expired")
+                        {
+                             <form asp-action="CancelBookingByStaff" asp-route-bookingId="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn HỦY đặt vé @item.BookingCode?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reason" value="@(item.Status == "Expired" ? "ExpiredManuallyCancelled" : "StaffCancelled")" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Hủy đặt vé">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @prevDisabled">
+                <a class="page-link" asp-action="AllBookings"
+                   asp-route-pageNumber="@(Model.Bookings.PageIndex - 1)"
+                   asp-route-searchTerm="@Model.CurrentSearchTerm"
+                   asp-route-statusFilter="@Model.CurrentStatusFilter"
+                   asp-route-dateFromFilter="@Model.CurrentDateFromFilter?.ToString("yyyy-MM-dd")"
+                   asp-route-dateToFilter="@Model.CurrentDateToFilter?.ToString("yyyy-MM-dd")"
+                   asp-route-cinemaFilter="@Model.CurrentCinemaFilter"
+                   @* asp-route-movieFilter="@Model.CurrentMovieFilter" *@
+                   aria-label="Previous">
+                    <span aria-hidden="true">« Trước</span>
+                </a>
+            </li>
+
+            @for (int i = 1; i <= Model.Bookings.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Bookings.PageIndex ? "active" : "")">
+                    <a class="page-link" asp-action="AllBookings"
+                       asp-route-pageNumber="@i"
+                       asp-route-searchTerm="@Model.CurrentSearchTerm"
+                       asp-route-statusFilter="@Model.CurrentStatusFilter"
+                       asp-route-dateFromFilter="@Model.CurrentDateFromFilter?.ToString("yyyy-MM-dd")"
+                       asp-route-dateToFilter="@Model.CurrentDateToFilter?.ToString("yyyy-MM-dd")"
+                       asp-route-cinemaFilter="@Model.CurrentCinemaFilter"
+                       @* asp-route-movieFilter="@Model.CurrentMovieFilter" *@
+                       >@i</a>
+                </li>
+            }
+
+            <li class="page-item @nextDisabled">
+                <a class="page-link" asp-action="AllBookings"
+                   asp-route-pageNumber="@(Model.Bookings.PageIndex + 1)"
+                   asp-route-searchTerm="@Model.CurrentSearchTerm"
+                   asp-route-statusFilter="@Model.CurrentStatusFilter"
+                   asp-route-dateFromFilter="@Model.CurrentDateFromFilter?.ToString("yyyy-MM-dd")"
+                   asp-route-dateToFilter="@Model.CurrentDateToFilter?.ToString("yyyy-MM-dd")"
+                   asp-route-cinemaFilter="@Model.CurrentCinemaFilter"
+                   @* asp-route-movieFilter="@Model.CurrentMovieFilter" *@
+                   aria-label="Next">
+                    <span aria-hidden="true">Sau »</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}

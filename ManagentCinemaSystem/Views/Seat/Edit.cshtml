@@ -1,0 +1,78 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model SeatViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa ghế";
+	Layout = "_AdminLayout"; // Sử dụng layout cho Admin
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.Row@Model.Col</span></h1>
+<h4>Phòng: <a asp-controller="Room" asp-action="Details" asp-route-id="@Model.RoomId">@Model.RoomName</a> (Rạp: @Model.CinemaName)</h4>
+<p>
+    <a asp-controller="Seat" asp-action="Manage" asp-route-roomId="@Model.RoomId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại quản lý ghế
+    </a>
+</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-controller="Seat" asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="RoomId" />
+            <input type="hidden" asp-for="RoomName" />
+            <input type="hidden" asp-for="CinemaName" />
+
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null)
+            {
+                <div class="alert alert-danger small">
+                    @foreach (var error in ViewData.ModelState[string.Empty].Errors)
+                    {
+                        <span>@error.ErrorMessage</span>
+
+                        <br />
+                    }
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Row" class="form-label fw-bold"></label>
+                <input asp-for="Row" class="form-control form-control-sm" maxlength="1" style="text-transform:uppercase" placeholder="A-Z" />
+                <span asp-validation-for="Row" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Col" class="form-label fw-bold"></label>
+                <input asp-for="Col" type="number" class="form-control form-control-sm" min="1" placeholder="1-100" />
+                <span asp-validation-for="Col" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SeatTypeId" class="form-label fw-bold"></label>
+                <select asp-for="SeatTypeId" asp-items="Model.AvailableSeatTypes" class="form-select form-select-sm">
+                    <option value="">-- Chọn loại ghế --</option>
+                </select>
+                <span asp-validation-for="SeatTypeId" class="text-danger small"></span>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                <a asp-controller="Seat" asp-action="Manage" asp-route-roomId="@Model.RoomId" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Tự động viết hoa cho input hàng ghế
+        $('input[name="Row"]').on('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
+}

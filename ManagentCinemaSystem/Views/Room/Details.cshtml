@@ -1,0 +1,67 @@
+﻿@model ManagentCinemaSystem.Models.Room
+
+@{
+    ViewData["Title"] = "Chi tiết phòng";
+	Layout = "_AdminLayout"; // Sử dụng layout cho Admin
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.Name</span></h1>
+<h4>(Thuộc rạp: <a asp-controller="Cinema" asp-action="Details" asp-route-id="@Model.CinemaId">@Model.Cinema.Name</a>)</h4>
+<p>
+    <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách phòng của rạp @Model.Cinema.Name
+    </a>
+</p>
+<hr />
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">Tên phòng</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">Rạp</dt>
+        <dd class="col-sm-9">@Model.Cinema.Name</dd>
+
+        <dt class="col-sm-3">Địa chỉ rạp</dt>
+        <dd class="col-sm-9">@Model.Cinema.Address</dd>
+    </dl>
+
+    <h4 class="mt-4">Danh sách ghế trong phòng (@Model.Seats.Count ghế)</h4>
+    @if (Model.Seats.Any())
+    {
+        <div class="table-responsive mt-2" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Hàng</th>
+                        <th>Cột</th>
+                        <th>Loại ghế</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var seat in Model.Seats.OrderBy(s => s.Row).ThenBy(s => s.Col))
+                    {
+                        <tr>
+                            <td>@seat.Row</td>
+                            <td>@seat.Col</td>
+                            <td>@seat.SeatType.Name</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p class="fst-italic">Phòng này chưa có ghế nào được cấu hình.</p>
+    }
+    <a asp-controller="Seat" asp-action="Manage" asp-route-roomId="@Model.Id" class="btn btn-outline-primary btn-sm mt-2">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Quản lý sơ đồ ghế
+    </a>
+
+    @* Có thể thêm danh sách Suất chiếu của phòng này nếu cần *@
+
+</div>
+<div class="mt-4">
+    <a asp-controller="Room" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Chỉnh sửa phòng</a>
+</div>

@@ -1,0 +1,90 @@
+﻿@using ManagentCinemaSystem.ViewModels.Customer 
+@model MovieDetailViewModel 
+
+@{
+    ViewData["Title"] = Model.Movie.Title; 
+	// Layout = "_CustomerLayout"; Hoặc "_AdminLayout" tùy vào ngữ cảnh
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            Layout = "_AdminLayout";
+        }
+        else if (User.IsInRole("Staff"))
+        {
+            Layout = "_StaffLayout";
+        }
+        else
+        {
+            Layout = "_CustomerLayout";
+        }
+    }
+    else
+    {
+        Layout = "_CustomerLayout"; // Layout cho người dùng chưa đăng nhập (trang Login, Register)
+    }
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <img src="@(string.IsNullOrEmpty(Model.Movie.Poster) ? "https://via.placeholder.com/300x450.png?text=" + System.Net.WebUtility.UrlEncode(Model.Movie.Title) : Model.Movie.Poster)"
+                 class="img-fluid rounded shadow" alt="@Model.Movie.Title">
+        </div>
+        <div class="col-md-8">
+            <h1>@Model.Movie.Title</h1> 
+            <hr> 
+            <p><strong>Đạo diễn:</strong> @Model.Movie.Director</p> 
+            <p><strong>Diễn viên:</strong> @Model.Movie.Actor</p> 
+            <p><strong>Thể loại:</strong> @string.Join(", ", Model.Movie.MovieGenres.Select(mg => mg.Genre.Name))</p>
+            @*
+                - Lấy danh sách tên thể loại từ collection MovieGenres.
+                - Dùng LINQ Select để trích xuất Genre.Name.
+                - Dùng string.Join để nối các tên thể loại bằng dấu ", ".
+                - Điều này yêu cầu MovieGenres và Genre liên quan phải được load trong Controller (Eager Loading).
+            *@
+            <p><strong>Thời lượng:</strong> @Model.Movie.Duration phút</p> 
+            <p><strong>Ngày phát hành:</strong> @Model.Movie.ReleaseDate.ToString("dd/MM/yyyy")</p> 
+            @* <p><strong>Mô tả:</strong> @Model.Movie.Description</p>  (Thêm trường Description vào Movie model nếu cần) *@
+            @* Phần mô tả phim đang được comment, bạn có thể bỏ comment nếu thêm trường Description vào Model.Movie *@
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["Error"]</div>
+            }
+            <h3 class="mt-4">Lịch chiếu</h3> 
+            @if (Model.ShowtimesByDate.Any()) // Kiểm tra xem có lịch chiếu nào không
+            {
+                foreach (var dateGroup in Model.ShowtimesByDate) // Lặp qua từng nhóm ngày chiếu
+                {
+                    <h5 class="mt-3">@dateGroup.Date.ToString("dddd, dd/MM/yyyy")</h5>
+                    // Hiển thị ngày chiếu (Thứ, ngày/tháng/năm)
+                    <div class="list-group">
+                        @foreach (var show in dateGroup.Shows) // Lặp qua từng suất chiếu trong ngày
+                        {
+                            // Đây là liên kết quan trọng để bắt đầu quá trình đặt vé
+                            <a asp-controller="Booking" asp-action="SelectSeats" asp-route-showId="@show.Id" class="list-group-item list-group-item-action">
+                                @*
+                                - Thẻ <a> tạo liên kết.
+                                - asp-controller="Booking": Chỉ định liên kết đến BookingController.
+                                - asp-action="SelectSeats": Chỉ định liên kết đến action SelectSeats.
+                                - asp-route-showId="@show.Id": Truyền ID của suất chiếu (@show.Id) vào URL dưới dạng tham số route tên là "showId". Action SelectSeats(int showId) trong BookingController sẽ nhận được giá trị này.
+                                - class="list-group-item list-group-item-action": Áp dụng style của Bootstrap List Group Item, có hiệu ứng khi hover/click.
+                            *@
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">@show.StartTime.ToString("HH:mm") - @show.EndTime.ToString("HH:mm")</h6> 
+                                    <small class="text-muted">@show.Room.Cinema.Name - @show.Room.Name</small> 
+                                </div>
+                                <small>Nhấn để chọn ghế và đặt vé</small> 
+                            </a>
+                        }
+                    </div>
+                }
+            }
+            else // Trường hợp không có lịch chiếu
+            {
+                <p class="fst-italic">Hiện chưa có lịch chiếu nào cho phim này.</p>
+                // Thông báo không có lịch chiếu
+            }
+        </div>
+    </div>
+</div>

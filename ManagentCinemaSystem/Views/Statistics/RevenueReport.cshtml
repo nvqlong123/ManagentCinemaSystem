@@ -1,0 +1,170 @@
+﻿@model ManagentCinemaSystem.ViewModels.Admin.Statistics.RevenueReportViewModel
+
+@{
+    ViewData["Title"] = "Báo cáo Doanh thu";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<form asp-action="RevenueReport" method="get" class="mb-4 p-3 border rounded bg-light">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="EndDate" class="form-label"></label>
+            <input asp-for="EndDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="ReportType" class="form-label">Loại báo cáo</label>
+            <select asp-for="ReportType" class="form-select">
+                <option value="Daily">Theo Ngày</option>
+                <option value="Monthly">Theo Tháng</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Xem Báo cáo</button>
+        </div>
+    </div>
+</form>
+
+@if (Model.DailyRevenues.Any())
+{
+    <div class="card shadow mb-4">
+        <div class="card-header">
+            <h5 class="card-title">Doanh thu từ @Model.StartDate.ToString("dd/MM/yyyy") đến @Model.EndDate.ToString("dd/MM/yyyy")</h5>
+        </div>
+        <div class="card-body">
+
+            <div class="mb-3">
+                <label for="chartTypeSelect" class="form-label">Chọn kiểu biểu đồ:</label>
+                <select id="chartTypeSelect" class="form-select w-auto d-inline-block">
+                    <option value="bar">Biểu đồ cột</option>
+                    <option value="line">Biểu đồ đường</option>
+                </select>
+            </div>
+
+            <div style="height: 400px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <hr />
+            <h4>Chi tiết:</h4>
+            <table class="table table-striped table-bordered table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>@(Model.ReportType == "Daily" ? "Ngày" : "Tháng")</th>
+                        <th class="text-end">Số Vé Bán</th>
+                        <th class="text-end">Doanh thu (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DailyRevenues)
+                    {
+                        <tr>
+                            <td>@item.Date.ToString(Model.ReportType == "Daily" ? "dd/MM/yyyy" : "MM/yyyy")</td>
+                            <td class="text-end">@item.TicketCount.ToString("N0")</td>
+                            <td class="text-end">@item.Revenue.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold table-secondary">
+                        <td>Tổng cộng</td>
+                        <td class="text-end">@Model.DailyRevenues.Sum(dr => dr.TicketCount).ToString("N0")</td>
+                        <td class="text-end">@Model.TotalRevenueForPeriod.ToString("N0")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">Không có dữ liệu doanh thu cho khoảng thời gian đã chọn.</div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const labels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ChartLabels));
+            const data = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ChartData));
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+
+            if (!labels || labels.length === 0 || !data || data.length === 0) {
+                console.warn("No chart data.");
+                return;
+            }
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+            gradient.addColorStop(1, 'rgba(54, 162, 235, 0.2)');
+
+            let revenueChart;
+            const baseConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: data,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Biểu đồ Doanh thu'
+                        },
+                        legend: {
+                            display: true
+                        },
+                        datalabels: {
+                            color: '#000',
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: value => value.toLocaleString('vi-VN') + ' ₫',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toLocaleString('vi-VN') + ' ₫';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            };
+
+            function renderChart(type) {
+                if (revenueChart) revenueChart.destroy();
+                baseConfig.type = type;
+                revenueChart = new Chart(ctx, baseConfig);
+            }
+
+            renderChart('bar');
+
+            document.getElementById('chartTypeSelect').addEventListener('change', function () {
+                renderChart(this.value);
+            });
+        });
+    </script>
+}

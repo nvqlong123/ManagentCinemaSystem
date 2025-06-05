@@ -1,0 +1,116 @@
+﻿@* File: Views/Home/Index.cshtml *@
+@using ManagentCinemaSystem.ViewModels.Customer
+@model HomeIndexViewModel
+
+@{
+    ViewData["Title"] = "Trang chủ";
+    // Layout = "_CustomerLayout"; Sử dụng layout cho khách hàng
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            Layout = "_AdminLayout";
+        }
+        else if (User.IsInRole("Staff"))
+        {
+            Layout = "_StaffLayout";
+        }
+        else
+        {
+            Layout = "_CustomerLayout";
+        }
+    }
+    else
+    {
+        Layout = "_CustomerLayout"; // Layout cho người dùng chưa đăng nhập (trang Login, Register)
+    }
+}
+
+<div class="text-center">
+    <h1 class="display-4">Chào mừng đến với Rạp Chiếu Phim!</h1>
+    <p>Khám phá thế giới điện ảnh đỉnh cao.</p>
+</div>
+
+@* (Tùy chọn) Banner hoặc Slideshow phim nổi bật *@
+@* <div id="featuredMoviesCarousel" class="carousel slide mb-4" data-bs-ride="carousel"> ... </div> *@
+
+<section class="mt-5">
+    <h2><i class="bi bi-film"></i> Phim Đang Chiếu</h2>
+    <hr />
+    @if (Model.NowShowingMovies.Any())
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var movie in Model.NowShowingMovies)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm movie-card">
+                        <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id">
+                            <img src="@(string.IsNullOrEmpty(movie.Poster) ? "https://via.placeholder.com/300x450.png?text=" + System.Net.WebUtility.UrlEncode(movie.Title) : movie.Poster)" class="card-img-top" alt="@movie.Title">
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id" class="text-decoration-none text-dark stretched-link">@movie.Title</a>
+                            </h5>
+                            <p class="card-text small text-muted flex-grow-1">Đạo diễn: @movie.Director</p>
+                            @* <p class="card-text small">Thể loại: @string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre.Name))</p> *@
+                            <div class="mt-auto">
+                                <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id" class="btn btn-sm btn-primary w-100">
+                                    Xem chi tiết & Lịch chiếu</a>
+                                @* Hoặc nút đặt vé nhanh nếu có 1 suất chiếu gần nhất *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="fst-italic">Hiện chưa có phim nào đang chiếu.</p>
+    }
+</section>
+
+<section class="mt-5">
+    <h2><i class="bi bi-stars"></i> Phim Sắp Chiếu</h2>
+    <hr />
+    @if (Model.ComingSoonMovies.Any())
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var movie in Model.ComingSoonMovies)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm movie-card">
+                        <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id">
+                            <img src="@(string.IsNullOrEmpty(movie.Poster) ? "https://via.placeholder.com/300x450.png?text=" + System.Net.WebUtility.UrlEncode(movie.Title) : movie.Poster)" class="card-img-top" alt="@movie.Title">
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id" class="text-decoration-none text-dark stretched-link">@movie.Title</a>
+                            </h5>
+                            <p class="card-text small text-muted flex-grow-1">Ngày khởi chiếu: @movie.ReleaseDate.ToString("dd/MM/yyyy")</p>
+                            <div class="mt-auto">
+                                <a asp-controller="Movie" asp-action="Details" asp-route-id="@movie.Id" class="btn btn-sm btn-outline-secondary w-100">Xem thông tin</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="fst-italic">Hiện chưa có thông tin phim sắp chiếu.</p>
+    }
+</section>
+
+@section Styles {
+    <style>
+        .movie-card img {
+            aspect-ratio: 2 / 3; /* Tỷ lệ khung hình cho poster */
+            object-fit: cover; /* Đảm bảo ảnh lấp đầy mà không bị méo */
+        }
+        .movie-card .card-title a:hover {
+            color: #0d6efd !important; /* Màu primary của Bootstrap khi hover */
+        }
+    </style>
+}

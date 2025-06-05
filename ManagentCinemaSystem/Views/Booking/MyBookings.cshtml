@@ -1,0 +1,71 @@
+﻿@using ManagentCinemaSystem.Models
+@model List<Booking>
+
+@{
+    ViewData["Title"] = "Lịch sử đặt vé";
+	Layout = "_CustomerLayout"; // Sử dụng layout cho khách hàng"
+}
+
+<div class="container mt-4">
+    <h2>Lịch sử đặt vé của bạn</h2>
+    <hr />
+
+    @if (!Model.Any())
+    {
+            <div class="alert alert-info text-center">
+                Bạn chưa có giao dịch đặt vé nào.
+            </div>
+            <div class="text-center">
+                 <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Tìm phim và đặt vé ngay!</a>
+            </div>
+    }
+    else
+    {
+            <div class="list-group">
+            @foreach (var booking in Model)
+            {
+                var firstShowSeat = booking.ShowSeats.FirstOrDefault();
+                string movieTitle = "N/A";
+                string showTime = "N/A";
+                string cinemaRoom = "N/A";
+
+                if (firstShowSeat?.Show != null)
+                {
+                    movieTitle = firstShowSeat.Show.Movie?.Title ?? "Phim không xác định";
+                    showTime = firstShowSeat.Show.StartTime.ToString("HH:mm dd/MM/yyyy");
+                    cinemaRoom = $"{firstShowSeat.Show.Room?.Cinema?.Name ?? "Rạp không xác định"} - Phòng {firstShowSeat.Show.Room?.Name ?? "N/A"}";
+                }
+
+                        <div class="list-group-item list-group-item-action flex-column align-items-start mb-3 shadow-sm border rounded">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">Mã đặt vé: #@booking.Id</h5>
+                                <small class="text-muted">Ngày đặt: @booking.Purchased.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</small>
+                            </div>
+                            <p class="mb-1">
+                                <strong>Phim:</strong> @movieTitle <br />
+                                <strong>Suất chiếu:</strong> @showTime <br />
+                                <strong>Rạp:</strong> @cinemaRoom
+                            </p>
+                            <div class="mb-2">
+                                 <strong>Ghế:</strong>
+                        @foreach (var ss in booking.ShowSeats.OrderBy(s => s.Seat.Row).ThenBy(s => s.Seat.Col))
+                        {
+                                         <span class="badge bg-dark me-1">@ss.Seat.Row@ss.Seat.Col</span>
+                        }
+                            </div>
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                 <small class="text-muted">Trạng thái: @booking.Status</small>
+                                <strong>Tổng tiền: <span class="text-danger">@booking.TotalCost.ToString("N0") VNĐ</span></strong>
+                            </div>
+                    @* Có thể thêm nút Hủy vé ở đây nếu logic cho phép *@
+                    @* if(booking.Status == "Confirmed" && firstShowSeat?.Show?.StartTime > DateTime.Now.AddHours(1)) // Ví dụ: cho hủy trước 1 tiếng
+                     {
+                          <form asp-action="CancelBooking" asp-route-bookingId="@booking.Id" method="post" class="mt-2">
+                              <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Bạn có chắc muốn hủy vé này?');">Hủy vé</button>
+                          </form>
+                     } *@
+                        </div>
+            }
+            </div>
+    }
+</div>

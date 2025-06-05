@@ -1,0 +1,108 @@
+﻿@model MovieIndexViewModel
+
+@{
+    ViewData["Title"] = "Quản lý Phim";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Thêm phim mới</a>
+</p>
+
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Tìm theo tên phim..." />
+        </div>
+        <div class="col-md-3">
+            <select name="selectedGenreId" asp-items="@(new SelectList(Model.Genres, "Id", "Name", Model.SelectedGenreId))" class="form-select">
+                <option value="">Tất cả thể loại</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="isActiveFilter" class="form-select">
+                <option value="">Tất cả trạng thái</option>
+                <option value="true" selected="@(Model.IsActiveFilter == true)">Đang hoạt động</option>
+                <option value="false" selected="@(Model.IsActiveFilter == false)">Không hoạt động</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-info w-100">Lọc</button>
+        </div>
+    </div>
+</form>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Poster</th>
+            <th>Tên phim</th>
+            <th>Đạo diễn</th>
+            <th>Thể loại</th>
+            <th>Ngày phát hành</th>
+            <th>Thời lượng</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var movie in Model.Movies)
+        {
+            <tr>
+                <td>
+                    <img src="@(string.IsNullOrEmpty(movie.Poster) ? "https://via.placeholder.com/80x120.png?text=No+Image" : movie.Poster)" alt="Poster phim @movie.Title" style="width: 80px; height: auto;" />
+                </td>
+                <td>@movie.Title</td>
+                <td>@movie.Director</td>
+                <td>
+                    @string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre.Name))
+                </td>
+                <td>@movie.ReleaseDate.ToString("dd/MM/yyyy")</td>
+                <td>@movie.Duration phút</td>
+                <td>
+                    <span id="movie-status-@movie.Id" class="badge @(movie.IsActive ? "bg-success" : "bg-secondary")">
+                        @(movie.IsActive ? "Hoạt động" : "Không hoạt động")
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <a asp-action="Edit" asp-route-id="@movie.Id" class="btn btn-sm btn-outline-primary">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@movie.Id" class="btn btn-sm btn-outline-danger">Xóa</a>
+                        @* Nút ToggleStatus dùng form POST truyền thống *@
+                        <form asp-controller="Movie" asp-action="ToggleStatus" asp-route-id="@movie.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm @(movie.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                @(movie.IsActive ? "Ẩn" : "Kích hoạt")
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        }
+        @if (!Model.Movies.Any())
+        {
+            <tr>
+                <td colspan="8" class="text-center">Không tìm thấy phim nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        // Nếu bạn muốn dùng AJAX cho ToggleStatus, bạn có thể thêm kịch bản JavaScript ở đây.
+        // Xem lại ví dụ AJAX ở phản hồi trước nếu cần.
+        // Đảm bảo URL trong AJAX là '/Movie/ToggleStatus/' + movieId
+    </script>
+}

@@ -1,0 +1,129 @@
+﻿@model PaginatedList<ManagentCinemaSystem.Models.Booking>
+
+@{
+    ViewData["Title"] = "Danh sách Đặt vé Chờ Xác nhận";
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+    if (User.IsInRole("Admin"))
+    {
+        Layout = "_AdminLayout";
+    }
+    else if (User.IsInRole("Staff"))
+    {
+        Layout = "_StaffLayout";
+    }
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="PendingList" method="get" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="searchTerm" class="form-control" placeholder="Tìm theo mã đặt vé, tên KH, email KH..." value="@ViewData["CurrentFilter"]" />
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        <a asp-action="PendingList" class="btn btn-secondary">Làm mới</a>
+    </div>
+</form>
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning">@TempData["Warning"]</div>
+}
+
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Không có đặt vé nào đang chờ xác nhận.</div>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Mã Đặt vé</th>
+                <th>Khách hàng</th>
+                <th>Phim</th>
+                <th>Tổng tiền</th>
+                <th>Thời gian tạo</th>
+                <th>Hạn thanh toán</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var firstShowSeat = item.ShowSeats.FirstOrDefault();
+                var movieTitle = firstShowSeat?.Show?.Movie?.Title ?? "N/A";
+                var customerName = item.Customer?.Name ?? "Khách vãng lai";
+                var customerInfo = string.IsNullOrEmpty(item.Customer?.Email) ? customerName : $"{customerName} ({item.Customer.Email})";
+
+                <tr>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id"><strong>@item.BookingCode</strong></a>
+                    </td>
+                    <td>@customerInfo</td>
+                    <td>@movieTitle</td>
+                    <td>@item.TotalCost.ToString("N0") VNĐ</td>
+                    <td>@item.Purchased.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</td>
+                    <td>
+                        @if (item.PaymentDeadline.HasValue)
+                        {
+                            var deadlineUtc = DateTime.SpecifyKind(item.PaymentDeadline.Value, DateTimeKind.Utc);
+                            var deadlineOffset = new DateTimeOffset(deadlineUtc);
+
+                            @deadlineOffset.ToLocalTime().ToString("HH:mm dd/MM/yyyy")
+
+                            if (deadlineOffset < DateTimeOffset.UtcNow)
+                            {
+                                <span class="badge bg-danger ms-1">Quá hạn</span>
+                            }
+                        }
+                        else
+                        {
+                            <span>Không có</span>
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="ConfirmPayment" asp-route-bookingId="@item.Id" method="post" class="d-inline me-1" onsubmit="return confirm('Xác nhận thanh toán cho đặt vé @item.BookingCode?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-sm" title="Xác nhận Thanh toán">
+                                <i class="fas fa-check-circle"></i> Xác nhận
+                            </button>
+                        </form>
+                        <form asp-action="CancelBookingByStaff" asp-route-bookingId="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn HỦY đặt vé @item.BookingCode? Hành động này sẽ hoàn lại ghế.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="reason" value="StaffCancelled" />
+                            <button type="submit" class="btn btn-danger btn-sm" title="Hủy đặt vé">
+                                <i class="fas fa-times-circle"></i> Hủy
+                            </button>
+                        </form>
+                         <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm ms-1" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="d-flex justify-content-center">
+        <a asp-action="PendingList"
+           asp-route-pageNumber="@(Model.PageIndex - 1)"
+           asp-route-searchTerm="@ViewData["CurrentFilter"]"
+           class="btn btn-outline-primary @prevDisabled">
+            Trang trước
+        </a>
+        <span class="btn btn-light disabled mx-1">Trang @Model.PageIndex / @Model.TotalPages</span>
+        <a asp-action="PendingList"
+           asp-route-pageNumber="@(Model.PageIndex + 1)"
+           asp-route-searchTerm="@ViewData["CurrentFilter"]"
+           class="btn btn-outline-primary @nextDisabled">
+            Trang sau
+        </a>
+    </div>
+}

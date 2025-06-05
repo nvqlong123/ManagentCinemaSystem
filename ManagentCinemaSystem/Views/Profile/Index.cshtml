@@ -1,0 +1,63 @@
+﻿@model ManagentCinemaSystem.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    if (User.Identity.IsAuthenticated)
+    {
+        if (User.IsInRole("Admin"))
+        {
+            Layout = "_AdminLayout";
+        }
+        else if (User.IsInRole("Staff"))
+        {
+            Layout = "_StaffLayout";
+        }
+        else if (User.IsInRole("Customer"))
+        {
+            Layout = "_CustomerLayout";
+        }
+        else
+        {
+            Layout = "_Layout"; // Layout chung mặc định nếu không khớp vai trò nào
+        }
+    }
+    else
+    {
+        Layout = "_Layout"; // Layout cho người dùng chưa đăng nhập (trang Login, Register)
+    }
+}
+
+<h2 class="text-center">Thông tin cá nhân</h2>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-success">@ViewBag.Message</div>
+}
+
+<form asp-action="Index" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="form-group mb-3">
+        <label asp-for="UserName" class="form-label"></label>
+        <input asp-for="UserName" class="form-control" readonly />
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+    <a asp-action="ChangePassword" class="btn btn-warning ms-2">Đổi mật khẩu</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

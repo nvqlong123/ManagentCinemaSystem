@@ -1,0 +1,141 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model ShowCreateViewModel
+
+@{
+    ViewData["Title"] = "Tạo suất chiếu mới";
+	Layout = "_AdminLayout"; // Sử dụng layout cho Admin
+    // Thời gian hiện tại cộng 1 giờ, làm tròn đến 00 hoặc 30 phút gần nhất
+    var defaultTime = DateTime.Now.AddHours(1);
+    int minutes = defaultTime.Minute;
+    if (minutes > 0 && minutes < 30) defaultTime = defaultTime.AddMinutes(30 - minutes);
+    else if (minutes > 30) defaultTime = defaultTime.AddHours(1).AddMinutes(-minutes); // Làm tròn lên giờ tiếp theo
+    else defaultTime = defaultTime.AddMinutes(-minutes); // Giữ nguyên nếu là xx:00 hoặc xx:30
+
+    string defaultTimeString = defaultTime.ToString("HH:mm");
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-7">
+        <form asp-controller="Show" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null)
+            {
+                <div class="alert alert-danger small p-2 mt-2">
+                    @foreach (var error in ViewData.ModelState[string.Empty].Errors)
+                    {
+                        <span>@error.ErrorMessage</span>
+
+                        <br />
+                    }
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="MovieId" class="form-label fw-bold"></label>
+                <select asp-for="MovieId" asp-items="Model.AvailableMovies" class="form-select form-select-sm" id="movieIdSelect">
+                    <option value="">-- Chọn phim --</option>
+                </select>
+                <span asp-validation-for="MovieId" class="text-danger small"></span>
+                <div id="movieDurationInfo" class="form-text small mt-1"></div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="CinemaId" class="form-label fw-bold"></label>
+                <select asp-for="CinemaId" asp-items="Model.AvailableCinemas" class="form-select form-select-sm" id="cinemaIdSelect">
+                    <option value="">-- Chọn rạp --</option>
+                </select>
+                <span asp-validation-for="CinemaId" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RoomId" class="form-label fw-bold"></label>
+                <select asp-for="RoomId" asp-items="Model.AvailableRooms" class="form-select form-select-sm" id="roomIdSelect" disabled>
+                    <option value="">-- Chọn phòng (sau khi chọn rạp) --</option>
+                </select>
+                <span asp-validation-for="RoomId" class="text-danger small"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ShowDate" class="form-label fw-bold"></label>
+                    <input asp-for="ShowDate" type="date" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="ShowDate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="StartTimeOnly" class="form-label fw-bold"></label>
+                    <input asp-for="StartTimeOnly" type="time" class="form-control form-control-sm" value="@defaultTimeString" />
+                    <span asp-validation-for="StartTimeOnly" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Tạo suất chiếu</button>
+                <a asp-controller="Show" asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            // Khi chọn Rạp, load danh sách Phòng
+            $('#cinemaIdSelect').on('change', function () {
+                var cinemaId = $(this).val();
+                var $roomSelect = $('#roomIdSelect');
+                $roomSelect.empty().append('<option value="">Đang tải phòng...</option>').prop('disabled', true);
+
+                if (cinemaId) {
+                    $.getJSON('@Url.Action("GetRoomsForCinema", "Show")', { cinemaId: cinemaId }, function (rooms) {
+                        $roomSelect.empty().append('<option value="">-- Chọn phòng --</option>');
+                        if (rooms && rooms.length > 0) {
+                            $.each(rooms, function (i, room) {
+                                $roomSelect.append($('<option></option>').val(room.id).text(room.name));
+                            });
+                            $roomSelect.prop('disabled', false);
+                        } else {
+                             $roomSelect.empty().append('<option value="">Rạp này chưa có phòng</option>');
+                        }
+                    }).fail(function() {
+                        $roomSelect.empty().append('<option value="">Lỗi khi tải phòng</option>');
+                        console.error("Lỗi khi gọi GetRoomsForCinema");
+                    });
+                } else {
+                     $roomSelect.empty().append('<option value="">-- Chọn phòng (sau khi chọn rạp) --</option>');
+                }
+            });
+
+            // Khi chọn Phim, hiển thị thời lượng
+            $('#movieIdSelect').on('change', function() {
+                var movieId = $(this).val();
+                var $durationInfo = $('#movieDurationInfo');
+                $durationInfo.text(''); // Xóa thông tin cũ
+
+                if(movieId) {
+                    $.getJSON('@Url.Action("GetMovieDuration", "Show")', { movieId: movieId }, function(data) {
+                        if(data && data.duration > 0) {
+                            $durationInfo.html(`<i>Thời lượng phim: <span class="fw-bold">${data.duration}</span> phút.</i>`);
+                        }
+                    }).fail(function() {
+                        console.error("Lỗi khi gọi GetMovieDuration");
+                    });
+                }
+            });
+            // Trigger change để load phòng nếu CinemaId đã được chọn (trường hợp validation fail và quay lại)
+            if ($('#cinemaIdSelect').val()) {
+                $('#cinemaIdSelect').trigger('change');
+            }
+            // Trigger change để load thời lượng nếu MovieId đã được chọn
+            if ($('#movieIdSelect').val()) {
+                $('#movieIdSelect').trigger('change');
+            }
+        });
+    </script>
+}

@@ -1,0 +1,80 @@
+﻿@model MovieCreateViewModel
+
+@{
+    ViewData["Title"] = "Thêm phim mới";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Director" class="form-label"></label>
+                <input asp-for="Director" class="form-control" />
+                <span asp-validation-for="Director" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Actors" class="form-label"></label>
+                <textarea asp-for="Actors" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Actors" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Duration" class="form-label"></label>
+                    <input asp-for="Duration" type="number" class="form-control" />
+                    <span asp-validation-for="Duration" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ReleaseDate" class="form-label"></label>
+                    <input asp-for="ReleaseDate" type="date" class="form-control" />
+                    <span asp-validation-for="ReleaseDate" class="text-danger"></span>
+                </div>
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="PosterUrl" class="form-label"></label>
+                <input asp-for="PosterUrl" class="form-control" />
+                <span asp-validation-for="PosterUrl" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="SelectedGenreIds" class="form-label"></label>
+                <select asp-for="SelectedGenreIds" name="selectedGenreIds" asp-items="@(new MultiSelectList(Model.AvailableGenres, "Id", "Name", Model.SelectedGenreIds))" class="form-control" multiple="multiple" size="5">
+                </select>
+                <span asp-validation-for="SelectedGenreIds" class="text-danger"></span>
+                <small class="form-text text-muted">Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều thể loại.</small>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label"></label>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-success">Lưu phim</button>
+                <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,71 @@
+﻿@using ManagentCinemaSystem.ViewModels
+@model RoomViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa phòng";
+	Layout = "_AdminLayout"; // Hoặc "_CustomerLayout" tùy vào ngữ cảnh
+}
+
+<h1>@ViewData["Title"]: <span class="text-primary">@Model.Name</span></h1>
+<h4>(Thuộc rạp: @Model.CinemaName)</h4>
+<p>
+    <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách phòng của rạp @Model.CinemaName
+    </a>
+</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-controller="Room" asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CinemaId" /> @* Giữ cinemaId cố định khi sửa phòng *@
+            <input type="hidden" asp-for="CinemaName" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null)
+            {
+                <div class="alert alert-danger small">
+                    @foreach (var error in ViewData.ModelState[string.Empty].Errors)
+                    {
+                        <span>@error.ErrorMessage</span>
+
+                        <br />
+                    }
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Thuộc rạp</label>
+                <input type="text" class="form-control form-control-sm" value="@Model.CinemaName" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-bold"></label>
+                <input asp-for="Name" class="form-control form-control-sm" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            @* Nếu cho phép đổi rạp cho phòng, bỏ comment phần này và cập nhật ViewModel/Controller
+            <div class="mb-3">
+                <label asp-for="CinemaId" class="form-label fw-bold">Đổi sang rạp</label>
+                <select asp-for="CinemaId" asp-items="Model.CinemasList" class="form-select form-select-sm">
+                     <option value="">-- Chọn rạp mới (nếu muốn đổi) --</option>
+                </select>
+                <span asp-validation-for="CinemaId" class="text-danger small"></span>
+            </div> *@
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                <a asp-controller="Room" asp-action="Index" asp-route-cinemaId="@Model.CinemaId" class="btn btn-secondary">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,13 @@
+﻿@model ManagentCinemaSystem.ViewModels.Statistics.TopCustomer
+
+@{
+    ViewData["Title"] = "Chi tiết khách hàng";
+}
+
+<h3>Khách hàng: @Model.CustomerName</h3>
+<ul>
+    <li><strong>Email:</strong> @Model.Email</li>
+    <li><strong>Tổng số vé đã đặt:</strong> @Model.TotalTickets</li>
+    <li><strong>Tổng chi tiêu:</strong> @Model.TotalSpent.ToString("N0") VNĐ</li>
+</ul>
+<a asp-action="Index" class="btn btn-secondary">Quay lại thống kê</a>

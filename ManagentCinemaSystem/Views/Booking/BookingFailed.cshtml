@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Đặt vé Thất bại";
+	Layout = "_CustomerLayout"; 
+}
+
+<div class="container mt-4 text-center">
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Đặt vé không thành công!</h4>
+        @if (TempData["Error"] != null)
+        {
+            <p>@TempData["Error"]</p>
+        }
+        else
+        {
+            <p>Đã có lỗi xảy ra trong quá trình xử lý đặt vé của bạn. Vui lòng thử lại sau.</p>
+        }
+
+        <hr>
+        <p class="mb-0">Nếu bạn cần hỗ trợ, vui lòng liên hệ bộ phận chăm sóc khách hàng.</p>
+    </div>
+
+    <div class="mt-4">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về Trang Chủ</a>
+        @* Có thể thêm link quay lại trang phim nếu có thông tin *@
+    </div>
+</div>

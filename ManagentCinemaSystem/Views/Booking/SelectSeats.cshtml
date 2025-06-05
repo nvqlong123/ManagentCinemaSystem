@@ -1,0 +1,318 @@
+﻿@using ManagentCinemaSystem.ViewModels.Booking
+@model SeatSelectionViewModel
+
+@{
+    ViewData["Title"] = "Chọn ghế";
+    // Tạo một dictionary để dễ dàng truy cập ghế theo vị trí Row/Col
+	Layout = "_CustomerLayout"; // Sử dụng layout cho khách hàng
+    var seatDictionary = Model.Seats.ToDictionary(s => (s.SeatRow, s.SeatCol));
+}
+
+<style>
+    /* === CSS CƠ BẢN CHO GHẾ - BẠN CẦN TÙY CHỈNH THÊM === */
+    .seat-map {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Căn giữa sơ đồ */
+        margin-top: 20px;
+        overflow-x: auto; /* Cho phép cuộn ngang nếu quá rộng */
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+
+    .seat-row {
+        display: flex;
+        margin-bottom: 5px;
+        align-items: center;
+    }
+
+    .row-label {
+        width: 25px; /* Độ rộng cố định cho nhãn hàng */
+        text-align: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .seat {
+        width: 35px;
+        height: 30px;
+        margin: 3px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        display: inline-flex; /* Dùng flex để căn giữa nội dung */
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        cursor: pointer;
+        background-color: #fff; /* Màu ghế trống mặc định */
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+        user-select: none; /* Chặn chọn text bên trong ghế */
+    }
+
+        .seat.seat-space { /* Kiểu cho khoảng trống/lối đi */
+            background-color: transparent;
+            border: none;
+            cursor: default;
+        }
+
+        .seat:hover:not(.seat-booked):not(.seat-space) {
+            transform: scale(1.1);
+            border-color: #0d6efd; /* Viền xanh khi hover ghế trống */
+        }
+
+        .seat.seat-booked {
+            background-color: #6c757d; /* Màu xám cho ghế đã đặt */
+            color: #fff;
+            cursor: not-allowed;
+            border-color: #5a6268;
+        }
+
+        .seat.seat-selected {
+            background-color: #198754; /* Màu xanh lá cho ghế đang chọn */
+            color: #fff;
+            border-color: #146c43;
+        }
+
+    /* Kiểu cho màn hình */
+    .screen {
+        width: 80%;
+        height: 15px;
+        background-color: #343a40;
+        margin-bottom: 30px;
+        text-align: center;
+        color: white;
+        font-size: 0.8em;
+        line-height: 15px;
+        border-radius: 2px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Chú thích */
+    .legend {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap; /* Cho phép xuống hàng nếu không đủ chỗ */
+        gap: 15px; /* Khoảng cách giữa các mục chú thích */
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9em;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+    /* Thông tin ghế đã chọn */
+    #selected-seats-info {
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+    }
+
+    #selected-seats-list span {
+        display: inline-block;
+        background-color: #e9ecef;
+        padding: 3px 8px;
+        margin: 2px;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+
+    #total-cost {
+        font-weight: bold;
+        color: #dc3545; /* Màu đỏ cho tổng tiền */
+    }
+</style>
+
+<div class="container mt-4">
+    <h2>Chọn ghế cho suất chiếu</h2>
+    <hr />
+
+    <div class="alert alert-info">
+        <strong>@Model.MovieTitle</strong> <br />
+        Thời gian: @Model.StartTime.ToString("HH:mm dd/MM/yyyy") <br />
+        Rạp: @Model.CinemaName - Phòng: @Model.RoomName
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @* Hiển thị lỗi validation nếu có (ví dụ: chưa chọn ghế nào) *@
+    @* <div asp-validation-summary="ModelOnly" class="text-danger"></div> *@
+
+
+    <form asp-action="ConfirmBooking" method="post" id="seat-selection-form">
+        @* Input ẩn để lưu ShowId *@
+        <input type="hidden" asp-for="ShowId" />
+        @* Input ẩn quan trọng để lưu danh sách ID các ShowSeat đã chọn (sẽ được cập nhật bằng JS) *@
+        <input type="hidden" asp-for="SelectedShowSeatIds" id="selected-showseat-ids-input" />
+
+        <div class="seat-map">
+            <div class="screen">MÀN HÌNH</div>
+
+            @for (char row = 'A'; row <= Model.MaxRow; row++)
+            {
+                <div class="seat-row">
+                    <div class="row-label">@row</div>
+                    @for (int col = 1; col <= Model.MaxCol; col++)
+                    {
+                        if (seatDictionary.TryGetValue((row, col), out var seatVM))
+                        {
+                            // Ghế tồn tại trong dữ liệu
+                            string seatClass = "seat";
+                            bool isBooked = seatVM.IsBooked;
+                            if (isBooked)
+                            {
+                                seatClass += " seat-booked";
+                            }
+                            else
+                            {
+                                seatClass += " seat-available"; // Thêm class để JS dễ dàng chọn
+                            }
+                            string seatName = $"{seatVM.SeatRow}{seatVM.SeatCol}";
+
+                            <button type="button"
+                                    class="@seatClass"
+                                    data-showseatid="@seatVM.ShowSeatId"
+                                    data-seatname="@seatName"
+                                    data-cost="@seatVM.SeatTypeCost"
+                                    title="@seatVM.SeatTypeName - @seatVM.SeatTypeCost.ToString("N0") VNĐ"
+                            @(isBooked ? "disabled" : "")>
+                                @col @* Hiển thị số cột bên trong ghế *@
+                            </button>
+                        }
+                        else
+                        {
+                            // Vị trí này không có ghế (có thể là lối đi)
+                            <div class="seat seat-space"></div>
+                        }
+                    }
+                    <div class="row-label">@row</div> @* Nhãn hàng bên phải *@
+                </div>
+            }
+        </div>
+
+        @* Chú thích các loại ghế *@
+        <div class="legend mt-4">
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #fff; border: 1px solid #ccc;"></span> Trống
+            </div>
+            <div class="legend-item">
+                <span class="legend-color seat-selected"></span> Đang chọn
+            </div>
+            <div class="legend-item">
+                <span class="legend-color seat-booked"></span> Đã đặt
+            </div>
+            @* Thêm các loại ghế khác nếu cần (VIP, Đôi...) *@
+            @{
+                var seatTypes = Model.Seats.Select(s => new { Name = s.SeatTypeName, Cost = s.SeatTypeCost }).Distinct().OrderBy(st => st.Cost);
+                foreach (var type in seatTypes)
+                {
+                    <div class="legend-item">
+                        <span>@type.Name (@type.Cost.ToString("N0") VNĐ)</span>
+                    </div>
+                }
+            }
+        </div>
+
+        @* Khu vực hiển thị thông tin ghế đã chọn và tổng tiền *@
+        <div id="selected-seats-info" class="mt-4">
+            <h5>Ghế đã chọn:</h5>
+            <div id="selected-seats-list">
+                <span class="text-muted">Chưa chọn ghế nào</span>
+            </div>
+            <hr />
+            <h5>Tổng cộng: <span id="total-cost">0 VNĐ</span></h5>
+        </div>
+
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-primary" id="submit-button" disabled>Tiếp tục</button>
+            <a asp-controller="Movie" asp-action="Details" asp-route-id="@Model.MovieId" class="btn btn-secondary">Quay lại</a>
+            @* Lấy MovieId từ ghế đầu tiên, cần kiểm tra null *@
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const seatMap = document.querySelector('.seat-map');
+            const selectedSeatsList = document.getElementById('selected-seats-list');
+            const totalCostElement = document.getElementById('total-cost');
+            const hiddenInput = document.getElementById('selected-showseat-ids-input');
+            const submitButton = document.getElementById('submit-button');
+
+            let selectedSeats = new Map(); // Dùng Map để lưu trữ { showSeatId: { name: 'A1', cost: 70000 } }
+
+            seatMap.addEventListener('click', function (e) {
+                // Chỉ xử lý khi click vào button ghế và không phải ghế đã đặt
+                if (e.target.classList.contains('seat') && !e.target.classList.contains('seat-booked') && !e.target.classList.contains('seat-space')) {
+                    const seatButton = e.target;
+                    const showSeatId = parseInt(seatButton.dataset.showseatid);
+                    const seatName = seatButton.dataset.seatname;
+                    const cost = parseInt(seatButton.dataset.cost);
+
+                    // Toggle trạng thái chọn
+                    if (seatButton.classList.contains('seat-selected')) {
+                        seatButton.classList.remove('seat-selected');
+                        selectedSeats.delete(showSeatId);
+                    } else {
+                        seatButton.classList.add('seat-selected');
+                        selectedSeats.set(showSeatId, { name: seatName, cost: cost });
+                    }
+
+                    updateSelectionInfo();
+                }
+            });
+
+            function updateSelectionInfo() {
+                // Cập nhật danh sách hiển thị
+                selectedSeatsList.innerHTML = ''; // Xóa nội dung cũ
+                if (selectedSeats.size === 0) {
+                    selectedSeatsList.innerHTML = '<span class="text-muted">Chưa chọn ghế nào</span>';
+                    submitButton.disabled = true; // Vô hiệu hóa nút nếu chưa chọn
+                } else {
+                     selectedSeats.forEach(seat => {
+                        const seatSpan = document.createElement('span');
+                        seatSpan.textContent = seat.name;
+                        selectedSeatsList.appendChild(seatSpan);
+                    });
+                    submitButton.disabled = false; // Kích hoạt nút khi đã chọn
+                }
+
+                // Cập nhật tổng tiền
+                let currentTotalCost = 0;
+                selectedSeats.forEach(seat => {
+                    currentTotalCost += seat.cost;
+                });
+                 totalCostElement.textContent = currentTotalCost.toLocaleString('vi-VN') + ' VNĐ'; // Định dạng tiền tệ Việt Nam
+
+                // Cập nhật input ẩn với danh sách ID ghế đã chọn
+                const selectedIds = Array.from(selectedSeats.keys());
+                hiddenInput.value = selectedIds.join(','); // Gửi ID dạng chuỗi phân tách bằng dấu phẩy
+
+                // Nếu bạn muốn gửi dạng JSON array, bạn có thể làm như sau (nhưng cần action nhận List<int>):
+                // hiddenInput.value = JSON.stringify(selectedIds);
+                // Tuy nhiên, ASP.NET Core Model Binding thường xử lý tốt với chuỗi phẩy, nên cách trên đơn giản hơn.
+                 // !!QUAN TRỌNG!! Đảm bảo tên của input ẩn khớp với tên tham số List<int> trong action POST ConfirmBooking
+                 // Hiện tại tên là "SelectedShowSeatIds", khớp với ViewModel và action đã tạo.
+            }
+
+            // Gọi lần đầu để đảm bảo trạng thái ban đầu đúng
+            updateSelectionInfo();
+        });
+    </script>
+}

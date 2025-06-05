@@ -1,0 +1,123 @@
+﻿@using ManagentCinemaSystem.ViewModels.Booking
+@model PaymentQRViewModel
+
+@{
+    ViewData["Title"] = "Thanh toán Đặt vé";
+	Layout = "_CustomerLayout"; // Sử dụng layout cho khách hàng
+    // --- TÍNH TOÁN THỜI GIAN CÒN LẠI BẰNG C# (DÙNG UTC) ---
+    TimeSpan timeRemaining = Model.PaymentDeadline > DateTime.UtcNow 
+        ? Model.PaymentDeadline - DateTime.UtcNow 
+        : TimeSpan.Zero;
+    double remainingSecondsForJs = timeRemaining.TotalSeconds;
+    long deadlineMillisecondsForJs = Model.PaymentDeadline > DateTime.UtcNow 
+        ? ((DateTimeOffset)Model.PaymentDeadline.ToUniversalTime()).ToUnixTimeMilliseconds() 
+        : ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeMilliseconds();
+}
+
+<div class="container mt-4">
+    <h2 class="text-center">Hoàn tất Thanh toán cho Đặt vé #@Model.BookingCode</h2>
+    <hr />
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info">@TempData["Info"]</div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Thông tin Thanh toán</h5>
+                </div>
+                <div class="card-body">
+                    <p>Vui lòng quét mã QR dưới đây bằng ứng dụng Ngân hàng của bạn để thanh toán.</p>
+                    <div class="text-center my-3">
+                        <img src="@Model.QrCodeBase64Image" alt="QR Code Thanh toán" class="img-fluid" style="max-width: 250px; border: 1px solid #ccc;" />
+                    </div>
+                    <hr>
+                    <h6>Chi tiết Chuyển khoản:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Ngân hàng:</strong> @Model.BankName</li>
+                        <li><strong>Số tài khoản:</strong> <span class="fw-bold text-danger">@Model.BankAccountNumber</span></li>
+                        <li><strong>Chủ tài khoản:</strong> @Model.BankAccountName</li>
+                        <li><strong>Số tiền:</strong> <span class="fw-bold text-danger">@Model.TotalCost.ToString("N0") VNĐ</span></li>
+                        <li><strong>Nội dung chuyển khoản:</strong> <span class="fw-bold text-danger">@Model.PaymentContent</span> (Rất quan trọng!)</li>
+                    </ul>
+                    <hr>
+                    <div class="alert alert-warning">
+                        <strong>Hạn thanh toán:</strong> @Model.PaymentDeadline.ToLocalTime().ToString("HH:mm dd/MM/yyyy")
+                        <div id="countdown-timer" class="fw-bold mt-1">
+                            @if (timeRemaining.TotalSeconds > 0)
+                            {
+                                <span>Thời gian còn lại: @timeRemaining.ToString(@"mm\:ss")</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">Đã hết hạn thanh toán!</span>
+                            }
+                        </div>
+                    </div>
+                    <p class="text-muted small">Sau khi thanh toán thành công, hệ thống sẽ tự động cập nhật (hoặc nhân viên sẽ xác nhận sớm). Bạn có thể kiểm tra trạng thái trong mục "Lịch sử đặt vé".</p>
+                </div>
+                <div class="card-footer text-center">
+                    <a asp-action="MyBookings" asp-controller="Booking" class="btn btn-info">Xem Lịch sử Đặt vé</a>
+                    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Về Trang chủ</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <h6>Thông tin vé:</h6>
+            <p><strong>Phim:</strong> @Model.MovieTitle</p>
+            <p><strong>Suất chiếu:</strong> @Model.ShowStartTime.ToLocalTime().ToString("HH:mm dd/MM/yyyy") tại @Model.CinemaName - Phòng @Model.RoomName</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Get the countdown timer element
+        const countdownElement = document.getElementById('countdown-timer');
+
+        // Get the remaining seconds from C#
+        let remainingSeconds = @remainingSecondsForJs;
+
+        // Debug: Log initial values
+        console.log('Remaining Seconds (C#):', remainingSeconds);
+        console.log('Deadline (ms):', @deadlineMillisecondsForJs);
+        console.log('Current Time (ms):', Date.now());
+
+        // Function to update the countdown timer
+        function updateCountdown() {
+            if (remainingSeconds <= 0) {
+                countdownElement.innerHTML = '<span class="text-danger">Đã hết hạn thanh toán!</span>';
+                console.log('Countdown stopped: Time expired');
+                return;
+            }
+
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdownElement.innerHTML = `Thời gian còn lại: ${formattedTime}`;
+            console.log('Time Remaining (s):', remainingSeconds);
+
+            remainingSeconds -= 1; // Decrease by 1 second
+        }
+
+        // Run the countdown immediately
+        updateCountdown();
+
+        // Only start interval if time remains
+        if (remainingSeconds > 0) {
+            setInterval(updateCountdown, 1000);
+        } else {
+            console.log('No interval started: Deadline has passed.');
+        }
+    </script>
+}

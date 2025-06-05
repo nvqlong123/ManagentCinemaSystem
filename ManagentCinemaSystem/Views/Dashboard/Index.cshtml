@@ -1,0 +1,244 @@
+﻿@model ManagentCinemaSystem.ViewModels.Admin.AdminDashboardViewModel
+@* Hoặc namespace ViewModel của bạn *@
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Đảm bảo Layout này tồn tại và phù hợp
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+        @* <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> *@
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <!-- Hàng chứa các Card thống kê -->
+    <div class="row">
+        <!-- Card Doanh thu -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Tổng Doanh thu (Đã xác nhận)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalRevenue.ToString("N0") VNĐ</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Tổng số Đặt vé -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Tổng Số Đặt Vé
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalBookings</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ticket-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Tổng số Khách hàng -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Tổng Số Khách Hàng
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">@Model.TotalCustomers</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Đặt vé Chờ Xử lý -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Đặt Vé Chờ Xử Lý
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalPendingBookings</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i> @* Icon có thể thay đổi *@
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center py-1">
+                    <a asp-controller="StaffBooking" asp-action="PendingList" class="small text-warning stretched-link text-decoration-none">Xem chi tiết <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Hàng chứa các bảng dữ liệu gần đây -->
+    <div class="row mt-4">
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Đặt Vé Gần Đây (5 mới nhất)</h6>
+                    <a asp-controller="StaffBooking" asp-action="AllBookings">Xem tất cả →</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentBookings.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Mã Vé</th>
+                                        <th>Khách Hàng</th>
+                                        <th>Phim</th>
+                                        <th>Tổng Tiền</th>
+                                        <th>Ngày Đặt</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var booking in Model.RecentBookings)
+                                    {
+                                        <tr>
+                                            <td><a asp-controller="StaffBooking" asp-action="Details" asp-route-id="@booking.Id">@booking.BookingCode</a></td>
+                                            <td>@(booking.Customer?.Name ?? "N/A")</td>
+                                            <td>@(booking.ShowSeats.FirstOrDefault()?.Show?.Movie?.Title ?? "N/A")</td>
+                                            <td class="text-end">@booking.TotalCost.ToString("N0")</td>
+                                            <td>@booking.Purchased.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                                            <td>
+                                                @if (booking.Status == "PendingPayment")
+                                                {
+                                                    <span class="badge bg-warning text-dark">@booking.Status</span>
+                                                }
+                                                else if (booking.Status == "Confirmed")
+                                                {
+                                                    <span class="badge bg-success">@booking.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@booking.Status</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted">Không có đặt vé nào gần đây.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Phim Mới Phát Hành/Thêm Gần Đây</h6>
+                    <a asp-controller="Movie" asp-action="Index">Xem tất cả →</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentlyAddedMovies.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var movie in Model.RecentlyAddedMovies)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a asp-controller="Movie" asp-action="Edit" asp-route-id="@movie.Id">@movie.Title</a> @* Link đến trang sửa phim cho Admin *@
+                                    <span class="badge bg-info rounded-pill">@movie.ReleaseDate.ToString("dd/MM/yyyy")</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted">Không có phim nào được thêm gần đây.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Khu vực cho các biểu đồ (sẽ thêm sau) *@
+    @*
+    <div class="row mt-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Biểu đồ Doanh thu (Ví dụ)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="myAreaChart"></canvas>
+                    </div>
+                    <hr>
+                    Styling for a Bootstrap Admin Panel can be found on <a target="_blank" rel="nofollow" href="https://startbootstrap.com/theme/sb-admin-2">SB Admin 2</a>.
+                </div>
+            </div>
+        </div>
+    </div>
+    *@
+
+</div>
+
+@section Scripts {
+@* Thêm script cho thư viện biểu đồ nếu cần (ví dụ: Chart.js) *@
+@*
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Ví dụ khởi tạo biểu đồ (cần dữ liệu từ ViewModel)
+            // const ctx = document.getElementById('myAreaChart');
+            // new Chart(ctx, {
+            //   type: 'line',
+            //   data: {
+            //     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], // Model.BookingTrendChart.Labels
+            //     datasets: [{
+            //       label: 'Doanh thu',
+            //       data: [1200, 1900, 3000, 5000, 2000, 3000], // Model.BookingTrendChart.Data
+            //       borderWidth: 1
+            //     }]
+            //   },
+            //   options: {
+            //     scales: {
+            //       y: {
+            //         beginAtZero: true
+            //       }
+            //     }
+            //   }
+            // });
+        </script>
+        *@
+}

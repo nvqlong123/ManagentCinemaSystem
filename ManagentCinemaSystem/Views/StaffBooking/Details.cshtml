@@ -1,0 +1,130 @@
+﻿@model ManagentCinemaSystem.Models.Booking
+
+@{
+    ViewData["Title"] = "Chi tiết Đặt vé #" + Model.BookingCode;
+    var firstShowSeat = Model.ShowSeats.FirstOrDefault();
+    if (User.IsInRole("Admin"))
+    {
+        Layout = "_AdminLayout";
+    }
+    else if (User.IsInRole("Staff"))
+    {
+        Layout = "_StaffLayout";
+    }
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Thông tin Đặt vé</h4>
+        <dl class="row">
+            <dt class="col-sm-4">Mã Đặt vé:</dt>
+            <dd class="col-sm-8">@Model.BookingCode</dd>
+
+            <dt class="col-sm-4">Trạng thái:</dt>
+            <dd class="col-sm-8">
+                @if (Model.Status == "PendingPayment")
+                {
+                    <span class="badge bg-warning text-dark">@Model.Status</span>
+                }
+                else if (Model.Status == "Confirmed")
+                {
+                    <span class="badge bg-success">@Model.Status</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">@Model.Status</span>
+                }
+            </dd>
+
+            <dt class="col-sm-4">Tổng tiền:</dt>
+            <dd class="col-sm-8">@Model.TotalCost.ToString("N0") VNĐ</dd>
+
+            <dt class="col-sm-4">Thời gian tạo:</dt>
+            <dd class="col-sm-8">@Model.Purchased.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</dd>
+
+            <dt class="col-sm-4">Hạn thanh toán:</dt>
+            <dd class="col-sm-8">@(Model.PaymentDeadline.HasValue ? Model.PaymentDeadline.Value.ToLocalTime().ToString("HH:mm dd/MM/yyyy") : "Không có")</dd>
+
+            <dt class="col-sm-4">Loại giao dịch:</dt>
+            <dd class="col-sm-8">@Model.TransactionType</dd>
+
+            @if (Model.StaffConfirmed != null)
+            {
+                <dt class="col-sm-4">Nhân viên xác nhận:</dt>
+                <dd class="col-sm-8">@Model.StaffConfirmed.Name (@Model.StaffConfirmed.UserName)</dd>
+            }
+        </dl>
+    </div>
+    <div class="col-md-6">
+        <h4>Thông tin Khách hàng</h4>
+        @if (Model.Customer != null)
+        {
+            <dl class="row">
+                <dt class="col-sm-4">Tên:</dt>
+                <dd class="col-sm-8">@Model.Customer.Name</dd>
+                <dt class="col-sm-4">Email:</dt>
+                <dd class="col-sm-8">@Model.Customer.Email</dd>
+                <dt class="col-sm-4">Điện thoại:</dt>
+                <dd class="col-sm-8">@Model.Customer.PhoneNumber</dd>
+            </dl>
+        }
+        else
+        {
+            <p>Khách vãng lai hoặc không có thông tin.</p>
+        }
+    </div>
+</div>
+
+@if (firstShowSeat != null && firstShowSeat.Show != null)
+{
+    <hr />
+    <h4>Thông tin Suất chiếu</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Phim:</dt>
+        <dd class="col-sm-9">@firstShowSeat.Show.Movie.Title</dd>
+        <dt class="col-sm-3">Rạp:</dt>
+        <dd class="col-sm-9">@firstShowSeat.Show.Room.Cinema.Name - Phòng @firstShowSeat.Show.Room.Name</dd>
+        <dt class="col-sm-3">Giờ chiếu:</dt>
+        <dd class="col-sm-9">@firstShowSeat.Show.StartTime.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</dd>
+    </dl>
+}
+
+<hr />
+<h4>Ghế đã đặt</h4>
+@if (Model.ShowSeats.Any())
+{
+    <ul class="list-inline">
+        @foreach (var ss in Model.ShowSeats.OrderBy(s => s.Seat.Row).ThenBy(s => s.Seat.Col))
+        {
+            <li class="list-inline-item"><span class="badge bg-info fs-6">@ss.Seat.Row@ss.Seat.Col (@ss.Seat.SeatType.Name)</span></li>
+        }
+    </ul>
+}
+else
+{
+    <p>Không có thông tin ghế.</p>
+}
+
+
+<div class="mt-4">
+    @if (Model.Status == "PendingPayment" && (!Model.PaymentDeadline.HasValue || Model.PaymentDeadline.Value >= DateTimeOffset.UtcNow))
+    {
+        <form asp-action="ConfirmPayment" asp-route-bookingId="@Model.Id" method="post" class="d-inline me-2" onsubmit="return confirm('Xác nhận thanh toán cho đặt vé @Model.BookingCode?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-check-circle"></i> Xác nhận Thanh toán
+            </button>
+        </form>
+        <form asp-action="CancelBookingByStaff" asp-route-bookingId="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn HỦY đặt vé @Model.BookingCode?');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="reason" value="StaffCancelled" /> @* Thêm lý do nếu cần *@
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-times-circle"></i> Hủy Đặt vé
+            </button>
+        </form>
+    }
+    <a asp-action="PendingList" class="btn btn-secondary">Quay lại Danh sách</a>
+</div>

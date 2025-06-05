@@ -1,0 +1,61 @@
+﻿@using ManagentCinemaSystem.Models
+@model ManagentCinemaSystem.Models.Show
+
+@{
+    ViewData["Title"] = "Xác nhận xóa Suất chiếu";
+	Layout = "_AdminLayout"; // Sử dụng layout cho Admin
+    bool canDelete = ViewBag.CanDelete ?? true;
+    int bookedSeatsCount = ViewBag.BookedSeatsCount ?? 0;
+}
+
+<h1>@ViewData["Title"]</h1>
+<h4>Phim: <span class="text-danger">@Model.Movie.Title</span></h4>
+<h5>Thời gian: @Model.StartTime.ToString("dd/MM/yyyy HH:mm") tại phòng @Model.Room.Name - @Model.Room.Cinema.Name</h5>
+
+<p>
+    <a asp-controller="Show" asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+        <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách suất chiếu
+    </a>
+</p>
+<hr />
+
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!canDelete)
+{
+    <div class="alert alert-warning mt-3">
+        <strong>Không thể xóa!</strong> Suất chiếu này hiện có <strong>@bookedSeatsCount</strong> vé đã được đặt.
+        Bạn không thể xóa suất chiếu đã có người đặt vé.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mt-3">
+        <h5>Cảnh báo!</h5>
+        <p>Bạn có chắc chắn muốn xóa vĩnh viễn suất chiếu này không?</p>
+        <p>Phim: <strong>@Model.Movie.Title</strong></p>
+        <p>Thời gian: <strong>@Model.StartTime.ToString("dd/MM/yyyy HH:mm")</strong></p>
+        <p>Phòng: <strong>@Model.Room.Name</strong> (Rạp: @Model.Room.Cinema.Name)</p>
+        <p class="text-danger fw-bold">Hành động này không thể hoàn tác.</p>
+    </div>
+}
+
+@if (canDelete)
+{
+    <form asp-controller="Show" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-3">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-danger">Xác nhận Xóa Suất chiếu</button>
+        <a asp-controller="Show" asp-action="Index" class="btn btn-secondary">Hủy</a>
+    </form>
+}
+else
+{
+    <a asp-controller="Show" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">Xem lại chi tiết</a>
+}
